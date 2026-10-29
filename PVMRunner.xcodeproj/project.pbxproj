@@ -1,0 +1,580 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		03BE877BD59FADE547674754 /* VMRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3067FA80755BB5E42A8F1BF /* VMRuntimeTests.swift */; };
+		0589707E93458502F57DBD89 /* ArchitectureProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59576A8511452C9816644DB2 /* ArchitectureProbe.swift */; };
+		14CC0FDFB04A4B10AA57A165 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B91029089E837779C77BD86F /* Security.framework */; };
+		196B464A411D34F931866B37 /* VMLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD46E21524194AC1ACDF9C2 /* VMLibraryStore.swift */; };
+		1CA79CEA0663B9FEC720F012 /* install-socket-vmnet-bridged.sh in Resources */ = {isa = PBXBuildFile; fileRef = C588BB6DA915EB3F8BF5E9DB /* install-socket-vmnet-bridged.sh */; };
+		27A0EA531F8CBA50446D369C /* SocketVmnetRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E4BCD2E257478005ACA4BE /* SocketVmnetRelay.swift */; };
+		2A7FED974257FCC8C8317E1A /* PVMRunnerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA3D992F08402F611647690 /* PVMRunnerApp.swift */; };
+		3563588CDC99723170487625 /* DiskConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73FEB0FE4EA9D17CCF246BC9 /* DiskConverter.swift */; };
+		4D275768D7D49F2396471D63 /* PVMParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92B943BEDAB9774165C57C7 /* PVMParser.swift */; };
+		53A94803D4D6F6AC055C8C0C /* ImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F5A82B1991CB111F66D97F /* ImportSheet.swift */; };
+		6732893060285BA5F9A3105E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0437EA29F3C67B7AEA92F333 /* Assets.xcassets */; };
+		7089035A823A5804D4E80974 /* VMDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7164A0191D0C05BD8EBB1D3 /* VMDetailView.swift */; };
+		71C0E336AF529B29239F9D55 /* VMRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 572CF427B5874781D29940F0 /* VMRecord.swift */; };
+		92EE7D3ECF279F1CCA820EA6 /* ImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6BEEA03D5A7537469BC4A5 /* ImportViewModel.swift */; };
+		9482EBF02753667E55D6687B /* ParsedPVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA68D12FD5571BA5D3D1A47 /* ParsedPVM.swift */; };
+		A5ED5DFCFF21DF183F5D4157 /* VMController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C705EC24B85E18313823407A /* VMController.swift */; };
+		AC21D5137A604489E3495B6B /* VMWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F396A112B6826257571CD772 /* VMWindowView.swift */; };
+		BEE32C80FF1D5287374A8B53 /* PVMParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CD243B4DB94477B144DD20 /* PVMParserTests.swift */; };
+		C224CC28F34F5540A3F3304E /* Virtualization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0274C7A84F5718584884C8D1 /* Virtualization.framework */; };
+		CF0A83C6A7636149A8DC3455 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CD026D61475FC89A43A0B /* LibraryView.swift */; };
+		E49B4F4CF938124745BFF500 /* VMConfigurationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637C910869DD3703FDAAB827 /* VMConfigurationBuilder.swift */; };
+		F80E2193B27B793CA19B802C /* SocketVmnetRelayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4135FFD474D889CF14D35C6 /* SocketVmnetRelayTests.swift */; };
+		FFF19D1E35A6B81B263AEA7F /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA8F0ED2B4F92A1B34455F7 /* LibraryViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		382CA3B75A78837E73528B05 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C645250A43C6EA80E83B24BC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A129FE3086C1440FC3681E0;
+			remoteInfo = PVMRunner;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0274C7A84F5718584884C8D1 /* Virtualization.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Virtualization.framework; path = System/Library/Frameworks/Virtualization.framework; sourceTree = SDKROOT; };
+		0437EA29F3C67B7AEA92F333 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0761326B6556CE4DC088D518 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0BA68D12FD5571BA5D3D1A47 /* ParsedPVM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedPVM.swift; sourceTree = "<group>"; };
+		0C1C064CEF6C27D2D3E9B30F /* PVMRunner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PVMRunner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0C6BEEA03D5A7537469BC4A5 /* ImportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportViewModel.swift; sourceTree = "<group>"; };
+		16447086EBDDF2C970AE00B2 /* PVMRunner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PVMRunner.entitlements; sourceTree = "<group>"; };
+		29E0B14892F7C9AE518BFEAF /* PVMRunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PVMRunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		572CF427B5874781D29940F0 /* VMRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMRecord.swift; sourceTree = "<group>"; };
+		59576A8511452C9816644DB2 /* ArchitectureProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureProbe.swift; sourceTree = "<group>"; };
+		5DD46E21524194AC1ACDF9C2 /* VMLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMLibraryStore.swift; sourceTree = "<group>"; };
+		637C910869DD3703FDAAB827 /* VMConfigurationBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMConfigurationBuilder.swift; sourceTree = "<group>"; };
+		6AA3D992F08402F611647690 /* PVMRunnerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PVMRunnerApp.swift; sourceTree = "<group>"; };
+		73FEB0FE4EA9D17CCF246BC9 /* DiskConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskConverter.swift; sourceTree = "<group>"; };
+		7CA8F0ED2B4F92A1B34455F7 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
+		B3F5A82B1991CB111F66D97F /* ImportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSheet.swift; sourceTree = "<group>"; };
+		B7164A0191D0C05BD8EBB1D3 /* VMDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMDetailView.swift; sourceTree = "<group>"; };
+		B91029089E837779C77BD86F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		C3067FA80755BB5E42A8F1BF /* VMRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMRuntimeTests.swift; sourceTree = "<group>"; };
+		C588BB6DA915EB3F8BF5E9DB /* install-socket-vmnet-bridged.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-socket-vmnet-bridged.sh"; sourceTree = "<group>"; };
+		C705EC24B85E18313823407A /* VMController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMController.swift; sourceTree = "<group>"; };
+		D92B943BEDAB9774165C57C7 /* PVMParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PVMParser.swift; sourceTree = "<group>"; };
+		DD0CD026D61475FC89A43A0B /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		E4135FFD474D889CF14D35C6 /* SocketVmnetRelayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketVmnetRelayTests.swift; sourceTree = "<group>"; };
+		E5CD243B4DB94477B144DD20 /* PVMParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PVMParserTests.swift; sourceTree = "<group>"; };
+		F396A112B6826257571CD772 /* VMWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMWindowView.swift; sourceTree = "<group>"; };
+		F4E4BCD2E257478005ACA4BE /* SocketVmnetRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketVmnetRelay.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A7A89C21559FEE0387126E7B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C224CC28F34F5540A3F3304E /* Virtualization.framework in Frameworks */,
+				14CC0FDFB04A4B10AA57A165 /* Security.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		46A3EF8BE294BCAB98D6F5AE = {
+			isa = PBXGroup;
+			children = (
+				EC5B9284DA674B0E515DE41E /* PVMRunner */,
+				B8CD8F8FF76D560E83868D4D /* PVMRunnerTests */,
+				826F0F170115335CDB67B221 /* scripts */,
+				FA8DDB2EFFC7EB2A8449F5B2 /* Frameworks */,
+				DF952B3EAB9F8A2A1F7BC42B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		78866D3A3CF802D743876B5A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				59576A8511452C9816644DB2 /* ArchitectureProbe.swift */,
+				73FEB0FE4EA9D17CCF246BC9 /* DiskConverter.swift */,
+				D92B943BEDAB9774165C57C7 /* PVMParser.swift */,
+				F4E4BCD2E257478005ACA4BE /* SocketVmnetRelay.swift */,
+				637C910869DD3703FDAAB827 /* VMConfigurationBuilder.swift */,
+				5DD46E21524194AC1ACDF9C2 /* VMLibraryStore.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		7DEE53435392BAFC290A7E0F /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B3F5A82B1991CB111F66D97F /* ImportSheet.swift */,
+				DD0CD026D61475FC89A43A0B /* LibraryView.swift */,
+				B7164A0191D0C05BD8EBB1D3 /* VMDetailView.swift */,
+				F396A112B6826257571CD772 /* VMWindowView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		826F0F170115335CDB67B221 /* scripts */ = {
+			isa = PBXGroup;
+			children = (
+				C588BB6DA915EB3F8BF5E9DB /* install-socket-vmnet-bridged.sh */,
+			);
+			path = scripts;
+			sourceTree = "<group>";
+		};
+		9AD09FB44F284999D9A78CB7 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				6AA3D992F08402F611647690 /* PVMRunnerApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B8CD8F8FF76D560E83868D4D /* PVMRunnerTests */ = {
+			isa = PBXGroup;
+			children = (
+				E5CD243B4DB94477B144DD20 /* PVMParserTests.swift */,
+				E4135FFD474D889CF14D35C6 /* SocketVmnetRelayTests.swift */,
+				C3067FA80755BB5E42A8F1BF /* VMRuntimeTests.swift */,
+			);
+			path = PVMRunnerTests;
+			sourceTree = "<group>";
+		};
+		CDF88CAE0F8091D13F55E43A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				0437EA29F3C67B7AEA92F333 /* Assets.xcassets */,
+				0761326B6556CE4DC088D518 /* Info.plist */,
+				16447086EBDDF2C970AE00B2 /* PVMRunner.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		D80DACCD2F52C7C16B0B0EB8 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				0BA68D12FD5571BA5D3D1A47 /* ParsedPVM.swift */,
+				572CF427B5874781D29940F0 /* VMRecord.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		DF952B3EAB9F8A2A1F7BC42B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0C1C064CEF6C27D2D3E9B30F /* PVMRunner.app */,
+				29E0B14892F7C9AE518BFEAF /* PVMRunnerTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E907C66EC9319DBDFAEE8AAD /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				0C6BEEA03D5A7537469BC4A5 /* ImportViewModel.swift */,
+				7CA8F0ED2B4F92A1B34455F7 /* LibraryViewModel.swift */,
+				C705EC24B85E18313823407A /* VMController.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		EC5B9284DA674B0E515DE41E /* PVMRunner */ = {
+			isa = PBXGroup;
+			children = (
+				9AD09FB44F284999D9A78CB7 /* App */,
+				D80DACCD2F52C7C16B0B0EB8 /* Models */,
+				CDF88CAE0F8091D13F55E43A /* Resources */,
+				78866D3A3CF802D743876B5A /* Services */,
+				E907C66EC9319DBDFAEE8AAD /* ViewModels */,
+				7DEE53435392BAFC290A7E0F /* Views */,
+			);
+			path = PVMRunner;
+			sourceTree = "<group>";
+		};
+		FA8DDB2EFFC7EB2A8449F5B2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B91029089E837779C77BD86F /* Security.framework */,
+				0274C7A84F5718584884C8D1 /* Virtualization.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6286216CFC1B17021E912FB4 /* PVMRunnerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0DCE63AA32E550EC998B4808 /* Build configuration list for PBXNativeTarget "PVMRunnerTests" */;
+			buildPhases = (
+				CC5F432E4DB2A72341FB7743 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D140056615D27EEF8C19857B /* PBXTargetDependency */,
+			);
+			name = PVMRunnerTests;
+			packageProductDependencies = (
+			);
+			productName = PVMRunnerTests;
+			productReference = 29E0B14892F7C9AE518BFEAF /* PVMRunnerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		6A129FE3086C1440FC3681E0 /* PVMRunner */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 29F78A28E79857FA400ACC65 /* Build configuration list for PBXNativeTarget "PVMRunner" */;
+			buildPhases = (
+				BD46D993D8CB5B627F801164 /* Sources */,
+				19231B599A517CAC3AB61D87 /* Resources */,
+				A7A89C21559FEE0387126E7B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PVMRunner;
+			packageProductDependencies = (
+			);
+			productName = PVMRunner;
+			productReference = 0C1C064CEF6C27D2D3E9B30F /* PVMRunner.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C645250A43C6EA80E83B24BC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					6286216CFC1B17021E912FB4 = {
+						ProvisioningStyle = Manual;
+					};
+					6A129FE3086C1440FC3681E0 = {
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = A8ACE439C22B7CA30AD5412A /* Build configuration list for PBXProject "PVMRunner" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 46A3EF8BE294BCAB98D6F5AE;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = DF952B3EAB9F8A2A1F7BC42B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6A129FE3086C1440FC3681E0 /* PVMRunner */,
+				6286216CFC1B17021E912FB4 /* PVMRunnerTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		19231B599A517CAC3AB61D87 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6732893060285BA5F9A3105E /* Assets.xcassets in Resources */,
+				1CA79CEA0663B9FEC720F012 /* install-socket-vmnet-bridged.sh in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BD46D993D8CB5B627F801164 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0589707E93458502F57DBD89 /* ArchitectureProbe.swift in Sources */,
+				3563588CDC99723170487625 /* DiskConverter.swift in Sources */,
+				53A94803D4D6F6AC055C8C0C /* ImportSheet.swift in Sources */,
+				92EE7D3ECF279F1CCA820EA6 /* ImportViewModel.swift in Sources */,
+				CF0A83C6A7636149A8DC3455 /* LibraryView.swift in Sources */,
+				FFF19D1E35A6B81B263AEA7F /* LibraryViewModel.swift in Sources */,
+				4D275768D7D49F2396471D63 /* PVMParser.swift in Sources */,
+				2A7FED974257FCC8C8317E1A /* PVMRunnerApp.swift in Sources */,
+				9482EBF02753667E55D6687B /* ParsedPVM.swift in Sources */,
+				27A0EA531F8CBA50446D369C /* SocketVmnetRelay.swift in Sources */,
+				E49B4F4CF938124745BFF500 /* VMConfigurationBuilder.swift in Sources */,
+				A5ED5DFCFF21DF183F5D4157 /* VMController.swift in Sources */,
+				7089035A823A5804D4E80974 /* VMDetailView.swift in Sources */,
+				196B464A411D34F931866B37 /* VMLibraryStore.swift in Sources */,
+				71C0E336AF529B29239F9D55 /* VMRecord.swift in Sources */,
+				AC21D5137A604489E3495B6B /* VMWindowView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CC5F432E4DB2A72341FB7743 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BEE32C80FF1D5287374A8B53 /* PVMParserTests.swift in Sources */,
+				F80E2193B27B793CA19B802C /* SocketVmnetRelayTests.swift in Sources */,
+				03BE877BD59FADE547674754 /* VMRuntimeTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D140056615D27EEF8C19857B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A129FE3086C1440FC3681E0 /* PVMRunner */;
+			targetProxy = 382CA3B75A78837E73528B05 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		09C882B4F0E31A271D37269D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PVMRunner/Resources/PVMRunner.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PVMRunner/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PVMRunner;
+				PRODUCT_NAME = PVMRunner;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		6A670DE9BE9E3349A4F90F75 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		6E1A02C541B0D00053B2A39D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = PVMRunner/Resources/PVMRunner.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PVMRunner/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PVMRunner;
+				PRODUCT_NAME = PVMRunner;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		87DC7FA15DB7D7ED04893DC6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PVMRunnerTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PVMRunner.app/Contents/MacOS/PVMRunner";
+			};
+			name = Debug;
+		};
+		9F639A1E5FEC0CD14B91317A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DD3E1181FDC4FB5E684D3C39 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.PVMRunnerTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PVMRunner.app/Contents/MacOS/PVMRunner";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0DCE63AA32E550EC998B4808 /* Build configuration list for PBXNativeTarget "PVMRunnerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				87DC7FA15DB7D7ED04893DC6 /* Debug */,
+				DD3E1181FDC4FB5E684D3C39 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		29F78A28E79857FA400ACC65 /* Build configuration list for PBXNativeTarget "PVMRunner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				09C882B4F0E31A271D37269D /* Debug */,
+				6E1A02C541B0D00053B2A39D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A8ACE439C22B7CA30AD5412A /* Build configuration list for PBXProject "PVMRunner" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9F639A1E5FEC0CD14B91317A /* Debug */,
+				6A670DE9BE9E3349A4F90F75 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C645250A43C6EA80E83B24BC /* Project object */;
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Required for Virtualization.framework. Works with ad-hoc ("Sign to Run Locally") signing. -->
+	<key>com.apple.security.virtualization</key>
+	<true/>
+
+	<!-- The App Sandbox is disabled so the app can read .pvm bundles anywhere and run
+	     /opt/homebrew/bin/qemu-img. Re-enabling it would require security-scoped bookmarks
+	     for every user-selected file and bundling qemu-img inside the app. -->
+	<key>com.apple.security.app-sandbox</key>
+	<false/>
+
+	<!-- Bridged networking (VZBridgedNetworkDeviceAttachment) needs this restricted
+	     entitlement. Apple must approve it for your team and it must be included in a
+	     provisioning profile; an app signed with it but without approval will not launch.
+	     Uncomment once Apple has granted it (see README, "Bridged networking entitlement").
+	<key>com.apple.vm.networking</key>
+	<true/>
+	-->
+</dict>
+</plist>

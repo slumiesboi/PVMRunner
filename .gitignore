@@ -1,0 +1,22 @@
+# Build output
+build/
+DerivedData/
+
+# Xcode per-user state
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Virtual machines and disk images: large and personal, never commit them
+*.pvm/
+*.pvm
+*.macvm/
+*.hdd/
+*.hds
+*.img
+*.iso
+
+# Local test artifacts
+fleet-boot-screenshot.png
+
+.DS_Store
