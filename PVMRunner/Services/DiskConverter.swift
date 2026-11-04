@@ -46,7 +46,7 @@ struct DiskConverter {
         try? FileManager.default.removeItem(at: partial)
         defer { try? FileManager.default.removeItem(at: partial) }
 
-        if format == .raw && source.pathExtension.lowercased() != "hds" {
+        if !format.needsQemuImg && source.pathExtension.lowercased() != "hds" {
             // Raw images are copied with an APFS clone, which is instant and shares blocks.
             try FileManager.default.copyItem(at: source, to: partial)
             progress(1)

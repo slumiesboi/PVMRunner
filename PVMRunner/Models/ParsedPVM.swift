@@ -31,11 +31,37 @@ enum ParsedGuestOS: Equatable {
     }
 }
 
-enum DiskSourceFormat: String {
+/// Source disk formats; the raw value is qemu-img's format name.
+enum DiskSourceFormat: String, CaseIterable {
     /// Parallels expanding image ("WithoutFreeSpace" / "WithouFreSpacExt" header).
     case parallels
     /// Plain (preallocated) Parallels image or a raw .img: the bytes are the disk.
     case raw
+    /// QEMU / UTM copy-on-write image.
+    case qcow2
+    /// VMware virtual disk.
+    case vmdk
+    /// VirtualBox virtual disk.
+    case vdi
+    /// Hyper-V / Virtual PC disk (.vhd).
+    case vpc
+    /// Hyper-V disk (.vhdx).
+    case vhdx
+
+    var displayName: String {
+        switch self {
+        case .parallels: return "Parallels expanding image"
+        case .raw: return "Raw image"
+        case .qcow2: return "QCOW2 (QEMU / UTM)"
+        case .vmdk: return "VMDK (VMware)"
+        case .vdi: return "VDI (VirtualBox)"
+        case .vpc: return "VHD (Hyper-V / Virtual PC)"
+        case .vhdx: return "VHDX (Hyper-V)"
+        }
+    }
+
+    /// Whether converting this format needs qemu-img (raw images are cloned directly).
+    var needsQemuImg: Bool { self != .raw }
 }
 
 struct ParsedDisk: Identifiable {
@@ -86,6 +112,13 @@ struct ParsedPVM {
     var efiEnabled: Bool?
     var macPlatform: MacPlatformFiles?
     var warnings: [String]
+    /// What the VM was read from, which changes some wording in the summary.
+    var origin: Origin = .parallels
+
+    enum Origin {
+        case parallels
+        case diskImage
+    }
 
     /// The first valid MAC address from the original configuration.
     var preferredMACAddress: String? {
@@ -94,6 +127,9 @@ struct ParsedPVM {
 
     /// A human-readable reason why this VM cannot be imported, or nil if it can.
     var unsupportedReason: String? {
+        if isEncrypted && origin == .diskImage {
+            return "This disk image is encrypted. Decrypt it with the tool that created it, then import it again."
+        }
         if isEncrypted {
             return "This virtual machine is encrypted. Decrypt it in Parallels Desktop first "
                 + "(Configure ▸ Security ▸ uncheck “Encrypt”), then import it again."

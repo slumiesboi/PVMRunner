@@ -81,6 +81,10 @@ enum VMConfigurationBuilder {
             }
         }
         config.storageDevices = storage
+        // An XHCI controller lets USB media be ejected and attached while the VM runs (macOS 15+).
+        if #available(macOS 15.0, *) {
+            config.usbControllers = [VZXHCIControllerConfiguration()]
+        }
 
         // Networking
         var mode = forceNAT && record.networkMode == .bridged ? .nat : record.networkMode

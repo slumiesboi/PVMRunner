@@ -3,8 +3,15 @@ import Foundation
 /// Reads and writes VM directories under `~/Library/Application Support/PVMRunner/VMs/`.
 struct VMLibraryStore {
     private let fileManager = FileManager.default
+    private let customRoot: URL?
+
+    /// `rootURL` overrides the library location (used by tests).
+    init(rootURL: URL? = nil) {
+        customRoot = rootURL
+    }
 
     var rootURL: URL {
+        if let customRoot { return customRoot }
         let support = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("PVMRunner/VMs", isDirectory: true)
     }

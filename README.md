@@ -1,10 +1,14 @@
 # PVMRunner
 
-A native macOS app (Swift + SwiftUI) that imports a Parallels Desktop `.pvm` bundle,
-converts its disks to raw images, and runs the guest with Apple's
-**Virtualization.framework**.
+A native macOS app (Swift + SwiftUI) that runs ARM64 virtual machines with Apple's
+**Virtualization.framework**. It can:
 
-The original `.pvm` is only ever read. Converted VMs live in
+- import a Parallels Desktop `.pvm` bundle,
+- import a disk image from another hypervisor: QCOW2 (QEMU, UTM), VMDK (VMware),
+  VDI (VirtualBox), VHD/VHDX (Hyper-V) or raw `.img`,
+- create a new VM and install an operating system from an ISO.
+
+Originals are only ever read. Converted VMs live in
 `~/Library/Application Support/PVMRunner/VMs/<name>/`:
 
 ```
@@ -63,7 +67,8 @@ The entitlements are in `PVMRunner/Resources/PVMRunner.entitlements`.
 
 ## Using it
 
-1. **File ▸ Open PVM…** (⌘O), the toolbar import button, or drag a `.pvm` onto the library window.
+1. **File ▸ Import VM or Disk Image…** (⌘O), the toolbar **Import** button, or drag a
+   `.pvm` or disk image onto the library window.
 2. The summary sheet shows the guest OS, architecture, CPUs, memory, disks, network
    adapters and MAC address read from `config.pvs`. You can rename the VM, change CPUs
    and RAM, pick a network mode, and optionally grow the boot disk.
@@ -74,7 +79,37 @@ The entitlements are in `PVMRunner/Resources/PVMRunner.entitlements`.
    interface, MAC, attached ISO). Changes apply on the next start.
 5. **Start** opens the VM window. The toolbar has Start, Pause/Resume, Stop (asks the
    guest to shut down via `requestStop`) and Force Stop (immediate power off), plus the
-   current state. The guest display resizes with the window.
+   current state and a **Media** menu for the ISO. The guest display resizes with the window.
+
+### Importing disk images from other hypervisors
+
+Import a `.qcow2`, `.vmdk`, `.vdi`, `.vhd`, `.vhdx` or `.img` the same way as a `.pvm`.
+`qemu-img info` detects the real format (a QCOW2 file named `.img` is still read as QCOW2),
+then the image is converted to a raw disk in the VM folder. QCOW2 backing chains are
+merged into one standalone disk. Encrypted images and other formats are refused with a message.
+
+A disk image carries no VM settings, so the summary starts with 2 CPUs, 4 GB of memory and NAT.
+The image must be an ARM64 guest that boots with UEFI. After conversion the boot disk's
+EFI partition is checked, and x86 images are refused.
+
+### Installing from an ISO
+
+**File ▸ New VM from ISO…** (⌘N), the toolbar **+** button, or drag an `.iso` onto the library:
+
+1. Choose an **ARM64 (aarch64)** installer ISO, such as Ubuntu for ARM, Fedora aarch64 or Debian arm64.
+   The sheet reads the ISO's `/EFI/BOOT` loaders and blocks x86-only installers, which can't boot on Apple Silicon.
+2. Set the name, CPUs, memory, disk size (sparse, so it only uses space as the guest writes) and network.
+3. **Create and Start** makes an empty VM with the ISO attached as a USB drive and boots the installer.
+4. When the install is done, use **Media ▸ Eject at Next Start** in the VM window. An ISO attached
+   at startup can't be unplugged until the VM stops, but that's harmless: when the installer reboots,
+   the firmware boots the installed system first.
+
+### Removable media while the VM runs
+
+On macOS 15 and later each VM gets a USB (XHCI) controller, so **Media ▸ Attach ISO…** in the
+VM window hot-plugs an ISO or disk image into the running guest, and **Eject** or
+**Replace ISO…** work on it live. On macOS 14, media changes apply at the next start. Media
+attached in the VM window is remembered for the next start until you eject it.
 
 ### Guest devices
 
@@ -88,7 +123,8 @@ framework's USB keyboard and USB absolute pointing device, which every Linux ker
 **macOS:** `VZMacOSBootLoader` with `VZMacPlatformConfiguration` (hardware model, machine
 identifier, auxiliary storage copied from the bundle), Mac graphics, Mac keyboard and trackpad.
 
-**ISO:** an optional `.iso` or `.img` attached read-only as a USB mass storage device, for install or recovery media.
+**ISO:** an optional `.iso` or `.img` attached read-only as a USB mass storage device, for install or
+recovery media. It can be hot-plugged or ejected while the VM runs on macOS 15+.
 
 ### Converted Linux guests that do not boot
 
@@ -107,7 +143,7 @@ Tools features are not available. Remove them in the guest if they cause errors.
 
 | Guest | Status | Notes |
 |---|---|---|
-| ARM64 Linux | ✅ Supported | Ubuntu, Debian, Fedora, Kali, etc. created by Parallels on Apple Silicon. |
+| ARM64 Linux | ✅ Supported | Ubuntu, Debian, Fedora, Kali, etc., from Parallels, from QCOW2/VMDK/VDI/VHD(X)/raw images, or installed from an ARM64 ISO. |
 | ARM64 macOS | ⚠️ Partial | Only when the bundle contains the hardware model, machine identifier and auxiliary storage (Parallels `.macvm` bundles). Otherwise import is refused with an explanation. The host must support the guest's hardware model. |
 | Windows (ARM or x86) | ❌ Not supported | Virtualization.framework does not provide the TPM, Secure Boot setup and drivers Windows needs. |
 | Any x86 / Intel guest | ❌ Not supported | Virtualization.framework only runs ARM64 guests on Apple Silicon. Detected from config.pvs (legacy BIOS, x86 hints) and, after conversion, by inspecting the boot disk's GPT and EFI boot loader. |
@@ -192,9 +228,9 @@ MVVM, all VM work on the main actor (the `VZVirtualMachine` runs on the main que
 | Layer | Files |
 |---|---|
 | Models | `Models/VMRecord.swift` (persisted JSON), `Models/ParsedPVM.swift` (parse result) |
-| Services | `PVMParser` (config.pvs + DiskDescriptor.xml), `DiskConverter` (qemu-img convert/resize with progress), `ArchitectureProbe` (GPT / EFI boot loader check), `VMConfigurationBuilder` (`VZVirtualMachineConfiguration` for Linux and macOS, network fallback), `VMLibraryStore` (folders + JSON) |
+| Services | `PVMParser` (config.pvs + DiskDescriptor.xml), `DiskImageInspector` (other hypervisors' images via `qemu-img info`), `VMFactory` (new VMs for ISO installs), `DiskConverter` (qemu-img convert/resize with progress), `ArchitectureProbe` (GPT / EFI boot loader check), `VMConfigurationBuilder` (`VZVirtualMachineConfiguration` for Linux and macOS, network fallback), `VMLibraryStore` (folders + JSON) |
 | View models | `VMController` (one VM: start, pause, resume, stop, force stop, state via KVO), `LibraryViewModel`, `ImportViewModel` |
-| Views | `LibraryView` (table + drag and drop), `VMDetailView` (settings panel), `ImportSheet` (summary, progress, errors), `VMWindowView` (`VZVirtualMachineView` + toolbar) |
+| Views | `LibraryView` (table + drag and drop), `VMDetailView` (settings panel), `ImportSheet` (summary, progress, errors), `NewVMSheet` (install from ISO), `VMWindowView` (`VZVirtualMachineView` + toolbar) |
 
 `project.yml` is the source of truth for the Xcode project. Run `xcodegen generate` after adding files.
 

@@ -74,7 +74,8 @@ struct ImportSheet: View {
                         Stepper(value: $importer.memoryMB, in: HostLimits.memoryRangeMB, step: 512) {
                             LabeledContent("Memory", value: MemoryFormat.string(mb: importer.memoryMB))
                         }
-                        if parsed.cpuCount != importer.cpuCount || parsed.memoryMB != importer.memoryMB {
+                        if parsed.origin == .parallels
+                            && (parsed.cpuCount != importer.cpuCount || parsed.memoryMB != importer.memoryMB) {
                             Text("Parallels config: \(parsed.cpuCount) CPUs, \(MemoryFormat.string(mb: parsed.memoryMB))")
                                 .font(.footnote).foregroundStyle(.secondary)
                         }
@@ -90,7 +91,7 @@ struct ImportSheet: View {
                             LabeledContent(disk.displayName) {
                                 Text(disk.virtualSize.map { DiskSizeText.format($0) } ?? "Unknown size")
                             }
-                            Text(disk.format == .parallels ? "Parallels expanding image → raw" : "Plain image → raw")
+                            Text("\(disk.format.displayName) → raw")
                                 .font(.footnote).foregroundStyle(.secondary)
                             ForEach(disk.warnings, id: \.self) { warning in
                                 Label(warning, systemImage: "exclamationmark.triangle")
@@ -117,7 +118,8 @@ struct ImportSheet: View {
                             if let mac = parsed.preferredMACAddress {
                                 Text(mac).monospaced()
                             } else {
-                                Text("Random (none valid in config)").foregroundStyle(.secondary)
+                                Text(parsed.origin == .parallels ? "Random (none valid in config)" : "Random")
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -141,7 +143,7 @@ struct ImportSheet: View {
             .frame(minHeight: 300, idealHeight: 520)
 
             HStack {
-                Text("The original .pvm is never modified.")
+                Text(parsed.origin == .parallels ? "The original .pvm is never modified." : "The original image is never modified.")
                     .font(.footnote).foregroundStyle(.secondary)
                 Spacer()
                 Button("Cancel", role: .cancel) { importer.dismiss() }
@@ -208,7 +210,7 @@ struct ImportSheet: View {
 struct QemuMissingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("qemu-img is required to convert Parallels disks", systemImage: "wrench.and.screwdriver")
+            Label("qemu-img is required to convert this disk", systemImage: "wrench.and.screwdriver")
                 .font(.headline)
             Text("It was not found at /opt/homebrew/bin/qemu-img or /usr/local/bin/qemu-img. Install QEMU with Homebrew in Terminal:")
             HStack {
@@ -221,7 +223,7 @@ struct QemuMissingView: View {
             }
             .padding(8)
             .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
-            Text("Then click Cancel and open the .pvm again.").font(.footnote).foregroundStyle(.secondary)
+            Text("Then click Cancel and open the file again.").font(.footnote).foregroundStyle(.secondary)
         }
     }
 }

@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 @main
 struct PVMRunnerApp: App {
@@ -17,7 +18,9 @@ struct PVMRunnerApp: App {
         .defaultSize(width: 1000, height: 600)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Open PVM…") {
+                Button("New VM from ISO…") { library.presentNewVM() }
+                    .keyboardShortcut("n")
+                Button("Import VM or Disk Image…") {
                     if let url = OpenPanels.choosePVM() { importer.open(url) }
                 }
                 .keyboardShortcut("o")
@@ -65,7 +68,7 @@ enum OpenPanels {
     /// panel allows choosing folders and validates the extension on confirmation.
     static func choosePVM() -> URL? {
         let panel = NSOpenPanel()
-        panel.title = "Open Parallels Virtual Machine"
+        panel.title = "Import a Parallels VM or Disk Image"
         panel.prompt = "Open"
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
@@ -87,7 +90,7 @@ enum OpenPanels {
         panel.title = "Attach ISO or Disk Image"
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.diskImage, .init(filenameExtension: "iso") ?? .data, .init(filenameExtension: "img") ?? .data]
+        panel.allowedContentTypes = ["iso", "img", "dmg", "cdr"].compactMap { UTType(filenameExtension: $0) } + [.diskImage]
         return panel.runModal() == .OK ? panel.url : nil
     }
 }
@@ -96,8 +99,8 @@ private final class PVMPanelDelegate: NSObject, NSOpenSavePanelDelegate {
     func panel(_ sender: Any, validate url: URL) throws {
         guard ImportViewModel.isImportable(url) else {
             throw CocoaError(.fileReadUnsupportedScheme, userInfo: [
-                NSLocalizedDescriptionKey: "“\(url.lastPathComponent)” is not a .pvm bundle.",
-                NSLocalizedRecoverySuggestionErrorKey: "Select a Parallels virtual machine (.pvm).",
+                NSLocalizedDescriptionKey: "“\(url.lastPathComponent)” is not a VM or disk image PVMRunner can import.",
+                NSLocalizedRecoverySuggestionErrorKey: "Select a Parallels .pvm, or a .qcow2, .vmdk, .vdi, .vhd, .vhdx or .img disk image. To install from an ISO, use File ▸ New VM from ISO.",
             ])
         }
     }

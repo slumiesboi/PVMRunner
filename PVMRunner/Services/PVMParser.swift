@@ -327,7 +327,7 @@ struct PVMParser {
 
     // MARK: - Helpers
 
-    private static let linuxDistroNames = [
+    static let linuxDistroNames = [
         "ubuntu", "debian", "fedora", "kali", "centos", "rocky", "alma", "red hat", "rhel",
         "opensuse", "suse", "arch", "manjaro", "mint", "alpine", "gentoo", "nixos", "elementary",
     ]

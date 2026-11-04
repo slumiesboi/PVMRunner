@@ -9,7 +9,11 @@ struct VMDetailView: View {
     @State private var draft: VMRecord
     @State private var confirmDelete = false
 
+    /// The saved record; changes made elsewhere (e.g. ejecting an ISO from the VM window) refresh the draft.
+    let record: VMRecord
+
     init(record: VMRecord, controller: VMController) {
+        self.record = record
         _draft = State(initialValue: record)
         self.controller = controller
     }
@@ -83,7 +87,10 @@ struct VMDetailView: View {
             .formStyle(.grouped)
             .disabled(locked)
             .onChange(of: draft) { _, newValue in
-                library.update(newValue)
+                if newValue != record { library.update(newValue) }
+            }
+            .onChange(of: record) { _, newValue in
+                if newValue != draft { draft = newValue }
             }
 
             if locked {

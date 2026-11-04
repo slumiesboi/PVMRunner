@@ -97,6 +97,9 @@ private struct VMWindowContent: View {
             VMStateBadge(controller: controller)
                 .padding(.horizontal, 6)
         }
+        ToolbarItem(placement: .primaryAction) {
+            mediaMenu
+        }
         ToolbarItemGroup(placement: .primaryAction) {
             Button {
                 Task { await library.start(id: record.id) }
@@ -139,6 +142,65 @@ private struct VMWindowContent: View {
             .disabled(!controller.canForceStop)
             .help("Power off immediately")
         }
+    }
+}
+
+extension VMWindowContent {
+    /// Eject or swap the ISO while the VM runs; when stopped, changes apply at the next start.
+    @ViewBuilder
+    var mediaMenu: some View {
+        let attached = controller.virtualMachine == nil ? record.isoPath : controller.attachedMediaPath
+        Menu {
+            if let attached {
+                Text("Attached: \((attached as NSString).lastPathComponent)")
+                if controller.mediaAttachedAtBoot && controller.virtualMachine != nil {
+                    Button("Eject at Next Start") { Task { await eject() } }
+                } else {
+                    Button("Eject") { Task { await eject() } }
+                }
+            } else {
+                Text("No ISO attached")
+            }
+            Button(attached == nil ? "Attach ISO…" : "Replace ISO…") {
+                if let url = OpenPanels.chooseISO() { Task { await attach(url) } }
+            }
+            .disabled(controller.mediaAttachedAtBoot && controller.virtualMachine != nil)
+            if controller.virtualMachine != nil && !controller.supportsLiveMedia {
+                Divider()
+                Text("Changes apply at the next start (live media needs macOS 15)")
+            }
+        } label: {
+            Label("Media", systemImage: attached == nil ? "opticaldisc" : "opticaldisc.fill")
+        }
+        .help(attached.map { "ISO: \(($0 as NSString).lastPathComponent)" } ?? "Attach an ISO")
+    }
+
+    private func eject() async {
+        if controller.virtualMachine != nil {
+            switch await controller.ejectMedia() {
+            case .ejected:
+                controller.notices.append("ISO ejected. It will not be attached at the next start either.")
+            case .atNextStart:
+                controller.notices.append("The ISO was attached at startup, so it stays connected until the VM "
+                    + "stops and will not be attached next time. After an install, the VM boots the installed system first.")
+            case .failed:
+                return
+            }
+        }
+        var updated = record
+        updated.isoPath = nil
+        library.update(updated)
+    }
+
+    private func attach(_ url: URL) async {
+        if controller.supportsLiveMedia {
+            guard await controller.attachMedia(url) else { return }
+        } else if controller.virtualMachine != nil {
+            controller.notices.append("“\(url.lastPathComponent)” will be attached the next time the VM starts.")
+        }
+        var updated = record
+        updated.isoPath = url.path
+        library.update(updated)
     }
 }
 

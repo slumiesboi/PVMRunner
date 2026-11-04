@@ -5,6 +5,9 @@ final class LibraryViewModel: ObservableObject {
     @Published private(set) var records: [VMRecord] = []
     @Published var selection: VMRecord.ID?
     @Published var errorMessage: String?
+    /// Drives the New VM from ISO sheet; `newVMISO` pre-selects the ISO (e.g. from drag and drop).
+    @Published var isNewVMPresented = false
+    @Published private(set) var newVMISO: URL?
     @Published private(set) var diskSizes: [UUID: (logical: UInt64, allocated: UInt64)] = [:]
 
     let store = VMLibraryStore()
@@ -47,6 +50,11 @@ final class LibraryViewModel: ObservableObject {
         } catch {
             errorMessage = "Could not save settings for “\(record.name)”: \(error.localizedDescription)"
         }
+    }
+
+    func presentNewVM(iso: URL? = nil) {
+        newVMISO = iso
+        isNewVMPresented = true
     }
 
     func didImport(_ record: VMRecord) {

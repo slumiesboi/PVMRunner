@@ -35,6 +35,19 @@ final class VMController: NSObject, ObservableObject {
     @Published private(set) var effectiveNetworkMode: NetworkMode?
     @Published var errorMessage: String?
     @Published var notices: [String] = []
+    /// Path of the ISO currently attached as a USB drive, if any.
+    @Published private(set) var attachedMediaPath: String?
+    /// True when the attached ISO was configured at start. Virtualization.framework does not
+    /// expose boot-time USB storage on the controller, so it cannot be unplugged until the VM stops.
+    @Published private(set) var mediaAttachedAtBoot = false
+
+    enum EjectResult {
+        /// Unplugged from the running VM.
+        case ejected
+        /// Attached at boot: stays in until the VM stops, and is not attached at the next start.
+        case atNextStart
+        case failed
+    }
 
     private var stateObservation: NSKeyValueObservation?
     private(set) var networkRelay: SocketVmnetRelay?
@@ -96,6 +109,8 @@ final class VMController: NSObject, ObservableObject {
         let output = try VMConfigurationBuilder.build(record: record, directory: directory, forceNAT: forceNAT)
         notices.append(contentsOf: output.notices)
         effectiveNetworkMode = output.effectiveNetworkMode
+        attachedMediaPath = record.isoPath.flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil }
+        mediaAttachedAtBoot = attachedMediaPath != nil
         networkRelay?.stop()
         networkRelay = output.relay
 
@@ -116,6 +131,56 @@ final class VMController: NSObject, ObservableObject {
     }
 
     /// Asks the guest to shut down (ACPI power button). The guest decides when to stop.
+    // MARK: - Removable media
+
+    /// Whether ISOs can be ejected and attached while the VM runs (macOS 15+).
+    var supportsLiveMedia: Bool {
+        guard let vm = virtualMachine, state == .running || state == .paused else { return false }
+        if #available(macOS 15.0, *) { return !vm.usbControllers.isEmpty }
+        return false
+    }
+
+    /// Ejects the attached ISO: unplugs it if it was hot-plugged, or drops it from the next
+    /// start if it was attached at boot.
+    @discardableResult
+    func ejectMedia() async -> EjectResult {
+        if #available(macOS 15.0, *), let usb = virtualMachine?.usbControllers.first,
+           let device = usb.usbDevices.first(where: { $0 is VZUSBMassStorageDevice }) {
+            do {
+                try await usb.detach(device: device)
+                attachedMediaPath = nil
+                mediaAttachedAtBoot = false
+                return .ejected
+            } catch {
+                errorMessage = "Could not eject the ISO: \(error.localizedDescription)"
+                return .failed
+            }
+        }
+        if mediaAttachedAtBoot { return .atNextStart }
+        attachedMediaPath = nil
+        return .ejected
+    }
+
+    /// Plugs an ISO or disk image into the running VM as a read-only USB drive, replacing
+    /// any ISO already attached. Returns true on success.
+    @discardableResult
+    func attachMedia(_ url: URL) async -> Bool {
+        guard #available(macOS 15.0, *), let usb = virtualMachine?.usbControllers.first else { return false }
+        if usb.usbDevices.contains(where: { $0 is VZUSBMassStorageDevice }) {
+            guard await ejectMedia() == .ejected else { return false }
+        }
+        do {
+            let attachment = try VZDiskImageStorageDeviceAttachment(url: url, readOnly: true)
+            let device = VZUSBMassStorageDevice(configuration: VZUSBMassStorageDeviceConfiguration(attachment: attachment))
+            try await usb.attach(device: device)
+            attachedMediaPath = url.path
+            return true
+        } catch {
+            errorMessage = "Could not attach “\(url.lastPathComponent)”: \(error.localizedDescription)"
+            return false
+        }
+    }
+
     func requestStop() {
         guard let vm = virtualMachine, vm.canRequestStop else { return }
         do { try vm.requestStop() } catch { fail(error) }
@@ -139,6 +204,8 @@ final class VMController: NSObject, ObservableObject {
     }
 
     private func teardown() {
+        attachedMediaPath = nil
+        mediaAttachedAtBoot = false
         stateObservation = nil
         virtualMachine = nil
         networkRelay?.stop()

@@ -34,15 +34,26 @@ struct LibraryView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
+                    library.presentNewVM()
+                } label: {
+                    Label("New VM", systemImage: "plus")
+                }
+                .help("Create a VM and install an OS from an ISO (⌘N)")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
                     if let url = OpenPanels.choosePVM() { importer.open(url) }
                 } label: {
-                    Label("Import PVM", systemImage: "square.and.arrow.down")
+                    Label("Import", systemImage: "square.and.arrow.down")
                 }
-                .help("Import a Parallels .pvm bundle (⌘O)")
+                .help("Import a Parallels .pvm or a QCOW2, VMDK, VDI, VHD(X) or raw disk image (⌘O)")
             }
         }
         .sheet(isPresented: Binding(get: { importer.isPresented }, set: { if !$0 { importer.dismiss() } })) {
             ImportSheet()
+        }
+        .sheet(isPresented: $library.isNewVMPresented) {
+            NewVMSheet(iso: library.newVMISO)
         }
         .alert("PVMRunner", isPresented: Binding(get: { library.errorMessage != nil },
                                                  set: { if !$0 { library.errorMessage = nil } })) {
@@ -61,10 +72,14 @@ struct LibraryView: View {
                     .foregroundStyle(.secondary)
                 Text("No virtual machines yet")
                     .font(.title3)
-                Text("Drop a Parallels .pvm bundle here, or choose File ▸ Open PVM…")
+                Text("Drop a Parallels .pvm, a disk image (.qcow2, .vmdk, .vdi, .vhdx, .img) or an installer ISO here.")
                     .foregroundStyle(.secondary)
-                Button("Open PVM…") {
-                    if let url = OpenPanels.choosePVM() { importer.open(url) }
+                    .multilineTextAlignment(.center)
+                HStack {
+                    Button("Import…") {
+                        if let url = OpenPanels.choosePVM() { importer.open(url) }
+                    }
+                    Button("New VM from ISO…") { library.presentNewVM() }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -102,7 +117,13 @@ struct LibraryView: View {
         guard let provider = providers.first else { return false }
         _ = provider.loadObject(ofClass: URL.self) { url, _ in
             guard let url else { return }
-            Task { @MainActor in importer.open(url) }
+            Task { @MainActor in
+                if url.pathExtension.lowercased() == "iso" {
+                    library.presentNewVM(iso: url)
+                } else {
+                    importer.open(url)
+                }
+            }
         }
         return true
     }

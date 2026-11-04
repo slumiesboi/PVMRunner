@@ -37,7 +37,7 @@ final class ImportViewModel: ObservableObject {
     }
 
     var needsQemuImg: Bool {
-        parsed?.disks.contains { $0.format == .parallels || $0.imageURL.pathExtension.lowercased() == "hds" } ?? false
+        parsed?.disks.contains { $0.format.needsQemuImg || $0.imageURL.pathExtension.lowercased() == "hds" } ?? false
     }
 
     var qemuImgMissing: Bool {
@@ -50,19 +50,26 @@ final class ImportViewModel: ObservableObject {
         return max(1, Int((Double(bytes) / 1_073_741_824).rounded(.up)))
     }
 
-    static func isImportable(_ url: URL) -> Bool {
+    static func isParallelsBundle(_ url: URL) -> Bool {
         ["pvm", "macvm"].contains(url.pathExtension.lowercased())
+    }
+
+    /// Parallels bundles and standalone disk images from other hypervisors.
+    static func isImportable(_ url: URL) -> Bool {
+        isParallelsBundle(url) || DiskImageInspector.isDiskImage(url)
     }
 
     func open(_ url: URL) {
         guard !isConverting else { return }
         guard Self.isImportable(url) else {
-            phase = .failed(message: "“\(url.lastPathComponent)” is not a Parallels virtual machine.",
-                            suggestion: "Choose a .pvm bundle, usually found in ~/Parallels.")
+            phase = .failed(message: "“\(url.lastPathComponent)” is not a virtual machine or disk image PVMRunner can import.",
+                            suggestion: "Choose a Parallels .pvm bundle, or a .qcow2, .vmdk, .vdi, .vhd, .vhdx or .img disk image.")
             return
         }
         do {
-            let result = try PVMParser().parse(bundleURL: url)
+            let result = Self.isParallelsBundle(url)
+                ? try PVMParser().parse(bundleURL: url)
+                : try DiskImageInspector().inspect(url)
             parsed = result
             name = result.name
             cpuCount = HostLimits.clampCPU(result.cpuCount)
