@@ -15,6 +15,7 @@ Originals are only ever read. Converted VMs live in
 vm.json            settings (CPU, RAM, network mode, MAC, ISO, …)
 disk0.img          raw boot disk (sparse)
 NVRAM              EFI variable store (Linux)
+console.log        serial console output; console.in types into it
 MachineIdentifier  platform identity
 HardwareModel      macOS guests only
 AuxiliaryStorage   macOS guests only
@@ -99,7 +100,8 @@ EFI partition is checked, and x86 images are refused.
 1. Choose an **ARM64 (aarch64)** installer ISO, such as Ubuntu for ARM, Fedora aarch64 or Debian arm64.
    The sheet reads the ISO's `/EFI/BOOT` loaders and blocks x86-only installers, which can't boot on Apple Silicon.
 2. Set the name, CPUs, memory, disk size (sparse, so it only uses space as the guest writes) and network.
-3. **Create and Start** makes an empty VM with the ISO attached as a USB drive and boots the installer.
+3. **Create and Start** makes an empty VM with the ISO attached read-only as a second virtio disk and boots the installer.
+   Give desktop installers at least 6 GB of memory (the default is 8 GB): the live session keeps its changes in RAM.
 4. When the install is done, use **Media ▸ Eject at Next Start** in the VM window. An ISO attached
    at startup can't be unplugged until the VM stops, but that's harmless: when the installer reboots,
    the firmware boots the installed system first.
@@ -123,8 +125,23 @@ framework's USB keyboard and USB absolute pointing device, which every Linux ker
 **macOS:** `VZMacOSBootLoader` with `VZMacPlatformConfiguration` (hardware model, machine
 identifier, auxiliary storage copied from the bundle), Mac graphics, Mac keyboard and trackpad.
 
-**ISO:** an optional `.iso` or `.img` attached read-only as a USB mass storage device, for install or
-recovery media. It can be hot-plugged or ejected while the VM runs on macOS 15+.
+**ISO:** an optional `.iso` or `.img` attached read-only, for install or recovery media. At startup a
+Linux guest gets it as a virtio block device (`/dev/vdb`), because live installers run their whole
+root filesystem from it and the emulated USB stick can stall under that load and freeze the guest.
+Media attached while the VM runs (macOS 15+) is a USB mass storage device, which can be ejected live.
+
+### A frozen guest: the serial console
+
+The guest's serial console (`hvc0` in Linux) is written to `console.log` in the VM folder, and
+anything written to the `console.in` FIFO next to it is typed into the console. That reaches a guest
+whose desktop has frozen, as long as it runs a getty on `hvc0` (Ubuntu does):
+
+```bash
+cd ~/Library/Application\ Support/PVMRunner/VMs/<name>
+echo ubuntu > console.in        # log in (the Ubuntu live user has no password)
+echo 'free -h; dmesg | tail' > console.in
+tail -f console.log
+```
 
 ### Converted Linux guests that do not boot
 

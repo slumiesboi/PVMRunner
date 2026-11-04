@@ -144,4 +144,63 @@ final class DiskImageAndMediaTests: XCTestCase {
         XCTAssertEqual(controller.attachedMediaPath, iso.path)
         await controller.forceStop()
     }
+
+    func testConsoleInputFIFO() throws {
+        let handle = try XCTUnwrap(VMConfigurationBuilder.openConsoleInput(in: directory))
+        let path = directory.appendingPathComponent(VMFiles.consoleInput).path
+        var info = stat()
+        XCTAssertEqual(lstat(path, &info), 0)
+        XCTAssertEqual(info.st_mode & S_IFMT, S_IFIFO)
+        let writer = try XCTUnwrap(FileHandle(forWritingAtPath: path))
+        writer.write(Data("root\n".utf8))
+        try writer.close()
+        XCTAssertEqual(handle.availableData, Data("root\n".utf8))
+        // Reopening reuses the FIFO instead of failing.
+        XCTAssertNotNil(VMConfigurationBuilder.openConsoleInput(in: directory))
+    }
+
+    /// Boots a real installer ISO, logs in on the serial console through console.in and checks
+    /// the live system runs from the ISO on virtio block. Opt in with
+    /// `TEST_RUNNER_PVMRUNNER_LIVE_ISO=/path/to/ubuntu-arm64.iso xcodebuild test …`.
+    func testBootsRealInstallerISOFromVirtioBlock() async throws {
+        guard let isoPath = ProcessInfo.processInfo.environment["PVMRUNNER_LIVE_ISO"] else {
+            throw XCTSkip("Set PVMRUNNER_LIVE_ISO to an ARM64 Linux live ISO")
+        }
+        var factory = VMFactory()
+        factory.store = VMLibraryStore(rootURL: directory.appendingPathComponent("library"))
+        let record = try factory.createFromISO(NewVMSettings(
+            name: "Live ISO", isoURL: URL(fileURLWithPath: isoPath), diskSizeGB: 16, cpuCount: 4,
+            memoryMB: 6144, networkMode: .nat, bridgedInterfaceID: nil))
+        let vmDirectory = factory.store.directory(for: record)
+        let log = vmDirectory.appendingPathComponent(VMFiles.consoleLog)
+        let controller = VMController(vmID: record.id)
+        await controller.start(record: record, directory: vmDirectory)
+        XCTAssertNil(controller.errorMessage)
+        defer { Task { @MainActor in await controller.forceStop() } }
+
+        func waitFor(_ text: String, seconds: Int) async throws -> String {
+            for _ in 0..<seconds {
+                let contents = (try? String(contentsOf: log, encoding: .utf8)) ?? ""
+                if contents.contains(text) { return contents }
+                try await Task.sleep(for: .seconds(1))
+            }
+            XCTFail("Timed out waiting for \(text)")
+            return (try? String(contentsOf: log, encoding: .utf8)) ?? ""
+        }
+        func type(_ text: String) throws {
+            let writer = try XCTUnwrap(FileHandle(forWritingAtPath: vmDirectory.appendingPathComponent(VMFiles.consoleInput).path))
+            writer.write(Data(text.utf8))
+            try writer.close()
+        }
+
+        _ = try await waitFor("login:", seconds: 300)
+        try type("ubuntu\n")
+        try await Task.sleep(for: .seconds(5))
+        try type("echo MARK-$(uname -m); lsblk -dno NAME,TRAN,SIZE; findmnt -no SOURCE /cdrom; echo END-$((40+2))\n")
+        let output = try await waitFor("END-42", seconds: 60)
+        print(output.suffix(800))
+        XCTAssertTrue(output.contains("MARK-aarch64"))
+        XCTAssertTrue(output.contains("/dev/vdb"), "live medium should be the virtio ISO")
+        await controller.forceStop()
+    }
 }

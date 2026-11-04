@@ -81,6 +81,7 @@ enum VMFiles {
     static let hardwareModel = "HardwareModel"
     static let auxiliaryStorage = "AuxiliaryStorage"
     static let consoleLog = "console.log"
+    static let consoleInput = "console.in"
 
     static func disk(_ index: Int) -> String { "disk\(index).img" }
 }

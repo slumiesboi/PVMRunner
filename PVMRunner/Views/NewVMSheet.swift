@@ -10,7 +10,7 @@ struct NewVMSheet: View {
     @State private var name = ""
     @State private var diskSizeGB = 64
     @State private var cpuCount = HostLimits.clampCPU(4)
-    @State private var memoryMB = HostLimits.clampMemoryMB(4096)
+    @State private var memoryMB = HostLimits.clampMemoryMB(8192)
     @State private var networkMode: NetworkMode = .nat
     @State private var bridgedInterfaceID: String?
     @State private var probe: ArchitectureProbe.Result?

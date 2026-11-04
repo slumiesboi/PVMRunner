@@ -75,7 +75,14 @@ enum VMConfigurationBuilder {
             let isoURL = URL(fileURLWithPath: isoPath)
             if FileManager.default.fileExists(atPath: isoURL.path) {
                 let attachment = try VZDiskImageStorageDeviceAttachment(url: isoURL, readOnly: true)
-                storage.append(VZUSBMassStorageDeviceConfiguration(attachment: attachment))
+                // Linux live installers run their whole root filesystem from the ISO, and the emulated
+                // USB stick can stall under that load and freeze the guest. Virtio block is fast and
+                // reliable; the firmware still boots from it while the main disk is blank.
+                if record.guestOS == .linux {
+                    storage.append(VZVirtioBlockDeviceConfiguration(attachment: attachment))
+                } else {
+                    storage.append(VZUSBMassStorageDeviceConfiguration(attachment: attachment))
+                }
             } else {
                 notices.append("The attached ISO “\(isoURL.lastPathComponent)” no longer exists and was skipped.")
             }
@@ -129,12 +136,15 @@ enum VMConfigurationBuilder {
         config.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
         config.memoryBalloonDevices = [VZVirtioTraditionalMemoryBalloonDeviceConfiguration()]
 
-        // Serial console (hvc0 in Linux) logged to console.log in the VM folder.
+        // Serial console (hvc0 in Linux) logged to console.log in the VM folder. Text written to the
+        // console.in FIFO is typed into it, so a guest with a frozen desktop can still be reached:
+        // `echo ubuntu > console.in`.
         let logURL = directory.appendingPathComponent(VMFiles.consoleLog)
         FileManager.default.createFile(atPath: logURL.path, contents: nil)
         if let logHandle = try? FileHandle(forWritingTo: logURL) {
             let serial = VZVirtioConsoleDeviceSerialPortConfiguration()
-            serial.attachment = VZFileHandleSerialPortAttachment(fileHandleForReading: nil, fileHandleForWriting: logHandle)
+            serial.attachment = VZFileHandleSerialPortAttachment(
+                fileHandleForReading: Self.openConsoleInput(in: directory), fileHandleForWriting: logHandle)
             config.serialPorts = [serial]
         }
 
@@ -149,6 +159,17 @@ enum VMConfigurationBuilder {
             return output
         }
         return Output(configuration: config, effectiveNetworkMode: mode, notices: notices, relay: relay)
+    }
+
+    /// Creates (or reuses) the console.in FIFO. Opening it read-write never blocks and keeps a
+    /// writer attached, so the console doesn't see end-of-file each time a host-side writer exits.
+    static func openConsoleInput(in directory: URL) -> FileHandle? {
+        let path = directory.appendingPathComponent(VMFiles.consoleInput).path
+        var info = stat()
+        if lstat(path, &info) == 0, info.st_mode & S_IFMT != S_IFIFO { unlink(path) }
+        if lstat(path, &info) != 0, mkfifo(path, 0o600) != 0 { return nil }
+        let fd = open(path, O_RDWR)
+        return fd >= 0 ? FileHandle(fileDescriptor: fd, closeOnDealloc: true) : nil
     }
 
     private static func makeNetworkDevice(record: VMRecord) -> VZVirtioNetworkDeviceConfiguration {
