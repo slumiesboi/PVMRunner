@@ -318,3 +318,9 @@ MVVM, all VM work on the main actor (the `VZVirtualMachine` runs on the main que
 
 The app icon is drawn in code by `scripts/make-icon.swift`. After changing it, regenerate every size with
 `swift scripts/make-icon.swift PVMRunner/Resources/Assets.xcassets/AppIcon.appiconset`.
+
+## License
+
+PVMRunner is released under the [MIT License](LICENSE). QEMU, swtpm, socket_vmnet and the
+virtio-win drivers are separate projects under their own licenses; PVMRunner doesn't include
+them; you install or download them yourself.
