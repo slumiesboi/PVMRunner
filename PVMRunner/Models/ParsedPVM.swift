@@ -135,9 +135,9 @@ struct ParsedPVM {
                 + "(Configure ▸ Security ▸ uncheck “Encrypt”), then import it again."
         }
         if guestOS == .windows {
-            return "Windows guests are not supported. Virtualization.framework does not provide "
-                + "the TPM, Secure Boot keys or drivers Windows on ARM needs. Keep using Parallels "
-                + "Desktop (or another hypervisor) for this VM."
+            return "Windows VMs from Parallels can't be imported: the installed system depends on "
+                + "Parallels' virtual hardware and drivers. Install Windows fresh instead with "
+                + "File ▸ New VM from ISO and an ARM64 Windows 11 ISO."
         }
         if architecture == .x86 {
             return "This is an x86 / Intel virtual machine. Virtualization.framework on Apple "

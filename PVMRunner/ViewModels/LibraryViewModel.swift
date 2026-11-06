@@ -34,12 +34,22 @@ final class LibraryViewModel: ObservableObject {
     func controller(for id: UUID) -> VMController {
         if let existing = controllers[id] { return existing }
         let controller = VMController(vmID: id)
+        controller.onVirtioDriverLoaded = { [weak self] in
+            guard let self, var record = self.record(id: id), record.diskBus == .preparingVirtio else { return }
+            record.diskBus = .virtio
+            self.update(record)
+        }
         controllers[id] = controller
         return controller
     }
 
     var hasActiveVMs: Bool {
         controllers.values.contains { $0.state.isActive }
+    }
+
+    /// QEMU guests are separate processes, so they must be ended when the app quits.
+    func terminateQEMUGuests() {
+        controllers.values.forEach { $0.terminateForQuit() }
     }
 
     func update(_ record: VMRecord) {

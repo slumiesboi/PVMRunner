@@ -13,26 +13,35 @@
 		14CC0FDFB04A4B10AA57A165 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B91029089E837779C77BD86F /* Security.framework */; };
 		196B464A411D34F931866B37 /* VMLibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD46E21524194AC1ACDF9C2 /* VMLibraryStore.swift */; };
 		1CA79CEA0663B9FEC720F012 /* install-socket-vmnet-bridged.sh in Resources */ = {isa = PBXBuildFile; fileRef = C588BB6DA915EB3F8BF5E9DB /* install-socket-vmnet-bridged.sh */; };
+		24C98105435CD58B08A4F607 /* QEMUDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A9DFE71CD01A034DC0F95E6 /* QEMUDisplayView.swift */; };
 		27A0EA531F8CBA50446D369C /* SocketVmnetRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E4BCD2E257478005ACA4BE /* SocketVmnetRelay.swift */; };
 		2A7FED974257FCC8C8317E1A /* PVMRunnerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA3D992F08402F611647690 /* PVMRunnerApp.swift */; };
 		2BB5E476A8D2442C47066348 /* NewVMSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1EBE2A48743E06028DE7494 /* NewVMSheet.swift */; };
 		3563588CDC99723170487625 /* DiskConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73FEB0FE4EA9D17CCF246BC9 /* DiskConverter.swift */; };
+		3B8207E1C3B0017DA365A746 /* QMPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 450659403863ABD82F181699 /* QMPClient.swift */; };
+		416A844AD8EEFF8A13409376 /* QEMUCommandBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5230D0EBE978DEFFE0BA10B2 /* QEMUCommandBuilder.swift */; };
+		47D3788171258DC6D5521902 /* WindowsDrivers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0DF991D560715936E4BB460 /* WindowsDrivers.swift */; };
 		4D275768D7D49F2396471D63 /* PVMParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92B943BEDAB9774165C57C7 /* PVMParser.swift */; };
 		53A94803D4D6F6AC055C8C0C /* ImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3F5A82B1991CB111F66D97F /* ImportSheet.swift */; };
 		6732893060285BA5F9A3105E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0437EA29F3C67B7AEA92F333 /* Assets.xcassets */; };
 		7089035A823A5804D4E80974 /* VMDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7164A0191D0C05BD8EBB1D3 /* VMDetailView.swift */; };
 		71C0E336AF529B29239F9D55 /* VMRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 572CF427B5874781D29940F0 /* VMRecord.swift */; };
+		73DB6BC939A2BC6E4C9E4230 /* RFBClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E217C7930A70A699ABF5F2F5 /* RFBClient.swift */; };
 		92EE7D3ECF279F1CCA820EA6 /* ImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6BEEA03D5A7537469BC4A5 /* ImportViewModel.swift */; };
 		9482EBF02753667E55D6687B /* ParsedPVM.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BA68D12FD5571BA5D3D1A47 /* ParsedPVM.swift */; };
 		9841F750BB5BB65BCB6378DB /* DiskImageInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CAFBE04E01A39362B0DD557 /* DiskImageInspector.swift */; };
+		A30C4ACB50CA379E201783B9 /* QEMUEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F19AE0FD3339667741CE85B /* QEMUEngineTests.swift */; };
 		A5ED5DFCFF21DF183F5D4157 /* VMController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C705EC24B85E18313823407A /* VMController.swift */; };
 		AC21D5137A604489E3495B6B /* VMWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F396A112B6826257571CD772 /* VMWindowView.swift */; };
 		BEE32C80FF1D5287374A8B53 /* PVMParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CD243B4DB94477B144DD20 /* PVMParserTests.swift */; };
 		C224CC28F34F5540A3F3304E /* Virtualization.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0274C7A84F5718584884C8D1 /* Virtualization.framework */; };
+		C644462860B98871B50A1FE5 /* QEMUTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9B718771C28156D5EEFE6DC /* QEMUTools.swift */; };
 		CF0A83C6A7636149A8DC3455 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CD026D61475FC89A43A0B /* LibraryView.swift */; };
 		E49B4F4CF938124745BFF500 /* VMConfigurationBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637C910869DD3703FDAAB827 /* VMConfigurationBuilder.swift */; };
 		EA14B2A3D093D44ADBB25A51 /* VMFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000C950A6B6BBDCE4E0C6399 /* VMFactory.swift */; };
+		F65B5B0997C8C8122184ACF7 /* QEMUVariableStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BFE3F4A6E175DA88530E767 /* QEMUVariableStore.swift */; };
 		F80E2193B27B793CA19B802C /* SocketVmnetRelayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4135FFD474D889CF14D35C6 /* SocketVmnetRelayTests.swift */; };
+		FBE5441816AD332C602DE310 /* QEMUMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C63BBB5DC7019F772B260BF4 /* QEMUMachine.swift */; };
 		FFF19D1E35A6B81B263AEA7F /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA8F0ED2B4F92A1B34455F7 /* LibraryViewModel.swift */; };
 /* End PBXBuildFile section */
 
@@ -56,6 +65,10 @@
 		0C6BEEA03D5A7537469BC4A5 /* ImportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportViewModel.swift; sourceTree = "<group>"; };
 		16447086EBDDF2C970AE00B2 /* PVMRunner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PVMRunner.entitlements; sourceTree = "<group>"; };
 		29E0B14892F7C9AE518BFEAF /* PVMRunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PVMRunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2BFE3F4A6E175DA88530E767 /* QEMUVariableStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QEMUVariableStore.swift; sourceTree = "<group>"; };
+		450659403863ABD82F181699 /* QMPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QMPClient.swift; sourceTree = "<group>"; };
+		4A9DFE71CD01A034DC0F95E6 /* QEMUDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QEMUDisplayView.swift; sourceTree = "<group>"; };
+		5230D0EBE978DEFFE0BA10B2 /* QEMUCommandBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QEMUCommandBuilder.swift; sourceTree = "<group>"; };
 		572CF427B5874781D29940F0 /* VMRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMRecord.swift; sourceTree = "<group>"; };
 		59576A8511452C9816644DB2 /* ArchitectureProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureProbe.swift; sourceTree = "<group>"; };
 		5DD46E21524194AC1ACDF9C2 /* VMLibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMLibraryStore.swift; sourceTree = "<group>"; };
@@ -64,18 +77,23 @@
 		73FEB0FE4EA9D17CCF246BC9 /* DiskConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskConverter.swift; sourceTree = "<group>"; };
 		7CA8F0ED2B4F92A1B34455F7 /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		7CAFBE04E01A39362B0DD557 /* DiskImageInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskImageInspector.swift; sourceTree = "<group>"; };
+		8F19AE0FD3339667741CE85B /* QEMUEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QEMUEngineTests.swift; sourceTree = "<group>"; };
 		A1EBE2A48743E06028DE7494 /* NewVMSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewVMSheet.swift; sourceTree = "<group>"; };
 		B3F5A82B1991CB111F66D97F /* ImportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportSheet.swift; sourceTree = "<group>"; };
 		B7164A0191D0C05BD8EBB1D3 /* VMDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMDetailView.swift; sourceTree = "<group>"; };
 		B91029089E837779C77BD86F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		C3067FA80755BB5E42A8F1BF /* VMRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMRuntimeTests.swift; sourceTree = "<group>"; };
 		C588BB6DA915EB3F8BF5E9DB /* install-socket-vmnet-bridged.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "install-socket-vmnet-bridged.sh"; sourceTree = "<group>"; };
+		C63BBB5DC7019F772B260BF4 /* QEMUMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QEMUMachine.swift; sourceTree = "<group>"; };
 		C705EC24B85E18313823407A /* VMController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMController.swift; sourceTree = "<group>"; };
 		D92B943BEDAB9774165C57C7 /* PVMParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PVMParser.swift; sourceTree = "<group>"; };
 		DD0CD026D61475FC89A43A0B /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		E217C7930A70A699ABF5F2F5 /* RFBClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RFBClient.swift; sourceTree = "<group>"; };
 		E4135FFD474D889CF14D35C6 /* SocketVmnetRelayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketVmnetRelayTests.swift; sourceTree = "<group>"; };
 		E505A038E1FEABA5398CC16B /* DiskImageAndMediaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiskImageAndMediaTests.swift; sourceTree = "<group>"; };
 		E5CD243B4DB94477B144DD20 /* PVMParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PVMParserTests.swift; sourceTree = "<group>"; };
+		E9B718771C28156D5EEFE6DC /* QEMUTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QEMUTools.swift; sourceTree = "<group>"; };
+		F0DF991D560715936E4BB460 /* WindowsDrivers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowsDrivers.swift; sourceTree = "<group>"; };
 		F396A112B6826257571CD772 /* VMWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VMWindowView.swift; sourceTree = "<group>"; };
 		F4E4BCD2E257478005ACA4BE /* SocketVmnetRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketVmnetRelay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -104,6 +122,20 @@
 			);
 			sourceTree = "<group>";
 		};
+		551F9049D1B0E5557F0D388A /* QEMU */ = {
+			isa = PBXGroup;
+			children = (
+				5230D0EBE978DEFFE0BA10B2 /* QEMUCommandBuilder.swift */,
+				C63BBB5DC7019F772B260BF4 /* QEMUMachine.swift */,
+				E9B718771C28156D5EEFE6DC /* QEMUTools.swift */,
+				2BFE3F4A6E175DA88530E767 /* QEMUVariableStore.swift */,
+				450659403863ABD82F181699 /* QMPClient.swift */,
+				E217C7930A70A699ABF5F2F5 /* RFBClient.swift */,
+				F0DF991D560715936E4BB460 /* WindowsDrivers.swift */,
+			);
+			path = QEMU;
+			sourceTree = "<group>";
+		};
 		78866D3A3CF802D743876B5A /* Services */ = {
 			isa = PBXGroup;
 			children = (
@@ -115,6 +147,7 @@
 				637C910869DD3703FDAAB827 /* VMConfigurationBuilder.swift */,
 				000C950A6B6BBDCE4E0C6399 /* VMFactory.swift */,
 				5DD46E21524194AC1ACDF9C2 /* VMLibraryStore.swift */,
+				551F9049D1B0E5557F0D388A /* QEMU */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -125,6 +158,7 @@
 				B3F5A82B1991CB111F66D97F /* ImportSheet.swift */,
 				DD0CD026D61475FC89A43A0B /* LibraryView.swift */,
 				A1EBE2A48743E06028DE7494 /* NewVMSheet.swift */,
+				4A9DFE71CD01A034DC0F95E6 /* QEMUDisplayView.swift */,
 				B7164A0191D0C05BD8EBB1D3 /* VMDetailView.swift */,
 				F396A112B6826257571CD772 /* VMWindowView.swift */,
 			);
@@ -152,6 +186,7 @@
 			children = (
 				E505A038E1FEABA5398CC16B /* DiskImageAndMediaTests.swift */,
 				E5CD243B4DB94477B144DD20 /* PVMParserTests.swift */,
+				8F19AE0FD3339667741CE85B /* QEMUEngineTests.swift */,
 				E4135FFD474D889CF14D35C6 /* SocketVmnetRelayTests.swift */,
 				C3067FA80755BB5E42A8F1BF /* VMRuntimeTests.swift */,
 			);
@@ -323,6 +358,13 @@
 				4D275768D7D49F2396471D63 /* PVMParser.swift in Sources */,
 				2A7FED974257FCC8C8317E1A /* PVMRunnerApp.swift in Sources */,
 				9482EBF02753667E55D6687B /* ParsedPVM.swift in Sources */,
+				416A844AD8EEFF8A13409376 /* QEMUCommandBuilder.swift in Sources */,
+				24C98105435CD58B08A4F607 /* QEMUDisplayView.swift in Sources */,
+				FBE5441816AD332C602DE310 /* QEMUMachine.swift in Sources */,
+				C644462860B98871B50A1FE5 /* QEMUTools.swift in Sources */,
+				F65B5B0997C8C8122184ACF7 /* QEMUVariableStore.swift in Sources */,
+				3B8207E1C3B0017DA365A746 /* QMPClient.swift in Sources */,
+				73DB6BC939A2BC6E4C9E4230 /* RFBClient.swift in Sources */,
 				27A0EA531F8CBA50446D369C /* SocketVmnetRelay.swift in Sources */,
 				E49B4F4CF938124745BFF500 /* VMConfigurationBuilder.swift in Sources */,
 				A5ED5DFCFF21DF183F5D4157 /* VMController.swift in Sources */,
@@ -331,6 +373,7 @@
 				196B464A411D34F931866B37 /* VMLibraryStore.swift in Sources */,
 				71C0E336AF529B29239F9D55 /* VMRecord.swift in Sources */,
 				AC21D5137A604489E3495B6B /* VMWindowView.swift in Sources */,
+				47D3788171258DC6D5521902 /* WindowsDrivers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -340,6 +383,7 @@
 			files = (
 				00612C047439EBC0D3E0A8A4 /* DiskImageAndMediaTests.swift in Sources */,
 				BEE32C80FF1D5287374A8B53 /* PVMParserTests.swift in Sources */,
+				A30C4ACB50CA379E201783B9 /* QEMUEngineTests.swift in Sources */,
 				F80E2193B27B793CA19B802C /* SocketVmnetRelayTests.swift in Sources */,
 				03BE877BD59FADE547674754 /* VMRuntimeTests.swift in Sources */,
 			);

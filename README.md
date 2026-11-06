@@ -1,12 +1,13 @@
 # PVMRunner
 
-A native macOS app (Swift + SwiftUI) that runs ARM64 virtual machines with Apple's
-**Virtualization.framework**. It can:
+A native macOS app (Swift + SwiftUI) that runs ARM64 virtual machines. Linux and macOS
+guests run on Apple's **Virtualization.framework**; Windows 11 runs on a built-in QEMU
+engine with hardware acceleration and a virtual TPM. It can:
 
 - import a Parallels Desktop `.pvm` bundle,
 - import a disk image from another hypervisor: QCOW2 (QEMU, UTM), VMDK (VMware),
   VDI (VirtualBox), VHD/VHDX (Hyper-V) or raw `.img`,
-- create a new VM and install an operating system from an ISO.
+- create a new VM and install an operating system from an ISO, including Windows 11 for ARM.
 
 Originals are only ever read. Converted VMs live in
 `~/Library/Application Support/PVMRunner/VMs/<name>/`:
@@ -19,7 +20,11 @@ console.log        serial console output; console.in types into it
 MachineIdentifier  platform identity
 HardwareModel      macOS guests only
 AuxiliaryStorage   macOS guests only
-console.log        guest serial console output (hvc0)
+QEMU_VARS.fd       UEFI variable store (Windows)
+TPM/               virtual TPM state (Windows)
+WindowsSetup/      answer file and virtio storage driver for Windows Setup
+qemu.log           QEMU and swtpm output (Windows)
+VirtioProbe.img    small spare disk for Windows on virtio (removed on NVMe)
 ```
 
 ## Requirements
@@ -30,6 +35,7 @@ console.log        guest serial console output (hvc0)
 | macOS | 14 Sonoma or later |
 | Xcode | 15 or later (built and tested with Xcode 27.1) |
 | qemu-img | `brew install qemu`. Looked up at `/opt/homebrew/bin/qemu-img`, then `/usr/local/bin/qemu-img`. |
+| Windows guests | `brew install qemu swtpm`: `qemu-system-aarch64`, its UEFI firmware and the TPM emulator. |
 | xcodegen | Optional: `brew install xcodegen`, only needed to regenerate the project from `project.yml`. |
 
 ## Building
@@ -106,12 +112,69 @@ EFI partition is checked, and x86 images are refused.
    at startup can't be unplugged until the VM stops, but that's harmless: when the installer reboots,
    the firmware boots the installed system first.
 
+### Windows 11
+
+Apple's Virtualization.framework can't run Windows (no TPM, no Windows drivers for its devices),
+so Windows VMs use a second engine: `qemu-system-aarch64` with Hypervisor.framework acceleration
+(`-accel hvf`), which runs the guest at native speed. Install the tools once:
+
+```bash
+brew install qemu swtpm
+```
+
+Then **New VM from ISO** with an ARM64 Windows 11 ISO (from Microsoft's "Download Windows 11
+Disk Image (ISO) for Arm-based PCs" page). The sheet recognises Windows installers and creates a
+Windows VM (4 CPUs, 8 GB, 64 GB by default). The screen shows in the VM window like any other VM;
+⌘ is the Windows key, and ⌘Q / ⌘W still quit and close.
+
+What PVMRunner sets up:
+
+- **Devices Windows drives with built-in drivers:** an NVMe disk (or virtio, see below), a USB
+  keyboard and tablet, and a ramfb screen. The UEFI variable store is created with the screen preset to 1024 × 768, ramfb's
+  largest mode (the firmware alone would start at 800 × 600).
+- **TPM 2.0** from `swtpm`, with its state in the VM folder.
+- **Setup answers:** a small read-only USB drive with `autounattend.xml` that skips Setup's Secure
+  Boot check (the Homebrew firmware has no Secure Boot), lets first-run setup continue offline and,
+  at the first sign-in, installs the virtio drivers from the driver drive. With the drivers
+  downloaded, the drive also carries the virtio storage driver in `$WinPEDriver$`, which Setup
+  loads by itself. Everything else in Setup is up to you.
+- **Boot prompt:** on a fresh VM, PVMRunner presses a key for the installer's "Press any key to boot
+  from CD or DVD" prompt.
+
+**Drivers.** Windows has no built-in driver for the VM's virtio network card or virtio disk. The
+free virtio-win drivers (about 900 MB, from the Fedora Project) add them: **Download** in the New
+Virtual Machine sheet or **Download Drivers** in a Windows VM's settings fetches them once, and the
+driver ISO is attached to every Windows VM from then on. This is how Parallels does it too: an
+answer file plus a driver package installed at the first sign-in.
+
+- **New VMs created after the download** install onto a virtio disk from the start (Setup loads
+  the storage driver from the setup drive) and install the remaining drivers, networking included,
+  by themselves at the first sign-in. First-run setup still runs offline, so choose
+  **I don't have internet** and create a local account.
+- **Older VMs:** choose **I don't have internet** during setup, then in Windows open PowerShell as
+  administrator and run the command shown in the VM's settings, which installs every ARM64 driver
+  from the driver drive.
+
+**Faster disk for older VMs (optional).** With the drivers installed, **Switch to Virtio** in the
+Disk section moves the disk from NVMe to virtio-blk on a dedicated I/O thread. In a test this was about 1.5×
+faster for random writes and 2× for sequential writes; random reads barely changed. The switch takes
+two starts: first PVMRunner adds a small blank virtio disk, and once Windows has loaded its virtio
+storage driver for it, the boot disk moves to virtio at the next start. Switching the boot disk
+directly would stop Windows at INACCESSIBLE_BOOT_DEVICE. While on virtio, the small disk stays
+attached as NVMe so Windows keeps its NVMe driver ready, and **Switch Back to NVMe** can undo the
+switch. Finish Windows setup first: shutting Windows down during first-run setup breaks setup.
+
+Limits: no 3D acceleration or resizable screen, no shared clipboard or folders, and the ISO is read
+over emulated USB, so installing takes longer than on a PC. Windows runs unactivated until you enter
+a product key. Windows VMs from Parallels can't be imported; install fresh instead.
+
 ### Removable media while the VM runs
 
 On macOS 15 and later each VM gets a USB (XHCI) controller, so **Media ▸ Attach ISO…** in the
 VM window hot-plugs an ISO or disk image into the running guest, and **Eject** or
 **Replace ISO…** work on it live. On macOS 14, media changes apply at the next start. Media
-attached in the VM window is remembered for the next start until you eject it.
+attached in the VM window is remembered for the next start until you eject it. Windows VMs
+(QEMU engine) support all of this live on any macOS version, including ejecting the install ISO.
 
 ### Guest devices
 
@@ -162,7 +225,8 @@ Tools features are not available. Remove them in the guest if they cause errors.
 |---|---|---|
 | ARM64 Linux | ✅ Supported | Ubuntu, Debian, Fedora, Kali, etc., from Parallels, from QCOW2/VMDK/VDI/VHD(X)/raw images, or installed from an ARM64 ISO. |
 | ARM64 macOS | ⚠️ Partial | Only when the bundle contains the hardware model, machine identifier and auxiliary storage (Parallels `.macvm` bundles). Otherwise import is refused with an explanation. The host must support the guest's hardware model. |
-| Windows (ARM or x86) | ❌ Not supported | Virtualization.framework does not provide the TPM, Secure Boot setup and drivers Windows needs. |
+| Windows 11 ARM64 | ✅ Supported (QEMU engine) | Installed from an ARM64 ISO. Needs `brew install qemu swtpm`. Networking needs the virtio-win drivers, which new VMs install by themselves. Parallels Windows VMs can't be imported. |
+| Windows x64 | ❌ Not supported | Would need full x86 emulation, which is far too slow. |
 | Any x86 / Intel guest | ❌ Not supported | Virtualization.framework only runs ARM64 guests on Apple Silicon. Detected from config.pvs (legacy BIOS, x86 hints) and, after conversion, by inspecting the boot disk's GPT and EFI boot loader. |
 | Encrypted VMs | ❌ Not supported | Decrypt in Parallels first (Configure ▸ Security). |
 | VMs with snapshots | ⚠️ Partial | Only the base image is imported. Delete snapshots in Parallels first to merge them. |
@@ -245,9 +309,10 @@ MVVM, all VM work on the main actor (the `VZVirtualMachine` runs on the main que
 | Layer | Files |
 |---|---|
 | Models | `Models/VMRecord.swift` (persisted JSON), `Models/ParsedPVM.swift` (parse result) |
+| QEMU engine | `QEMUTools` (finds qemu, firmware, swtpm), `QEMUCommandBuilder` (command line, answer file), `QEMUVariableStore` (UEFI store with the screen preset), `QEMUMachine` (processes and lifecycle), `QMPClient` (QEMU control protocol), `RFBClient` (VNC over a Unix socket), `WindowsDrivers` (virtio-win download), `WindowsSetupFiles` (setup drive with answer file and storage driver) |
 | Services | `PVMParser` (config.pvs + DiskDescriptor.xml), `DiskImageInspector` (other hypervisors' images via `qemu-img info`), `VMFactory` (new VMs for ISO installs), `DiskConverter` (qemu-img convert/resize with progress), `ArchitectureProbe` (GPT / EFI boot loader check), `VMConfigurationBuilder` (`VZVirtualMachineConfiguration` for Linux and macOS, network fallback), `VMLibraryStore` (folders + JSON) |
 | View models | `VMController` (one VM: start, pause, resume, stop, force stop, state via KVO), `LibraryViewModel`, `ImportViewModel` |
-| Views | `LibraryView` (table + drag and drop), `VMDetailView` (settings panel), `ImportSheet` (summary, progress, errors), `NewVMSheet` (install from ISO), `VMWindowView` (`VZVirtualMachineView` + toolbar) |
+| Views | `LibraryView` (table + drag and drop), `VMDetailView` (settings panel), `ImportSheet` (summary, progress, errors), `NewVMSheet` (install from ISO), `VMWindowView` (`VZVirtualMachineView` or `QEMUDisplayView` + toolbar) |
 
 `project.yml` is the source of truth for the Xcode project. Run `xcodegen generate` after adding files.
 

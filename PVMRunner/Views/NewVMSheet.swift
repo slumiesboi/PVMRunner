@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Creates an empty Linux VM and boots it from an installer ISO.
+/// Creates an empty Linux or Windows VM and boots it from an installer ISO.
 struct NewVMSheet: View {
     @EnvironmentObject private var library: LibraryViewModel
     @Environment(\.openWindow) private var openWindow
@@ -15,6 +15,8 @@ struct NewVMSheet: View {
     @State private var bridgedInterfaceID: String?
     @State private var probe: ArchitectureProbe.Result?
     @State private var errorMessage: String?
+    @State private var missingTools: [QEMUTools.Missing] = []
+    @ObservedObject private var drivers = WindowsDrivers.shared
 
     init(iso: URL?) {
         _isoURL = State(initialValue: iso)
@@ -22,8 +24,10 @@ struct NewVMSheet: View {
     }
 
     private var isX86Only: Bool { probe?.architecture == .x86 }
+    private var isWindows: Bool { probe?.isWindows == true }
     private var canCreate: Bool {
         isoURL != nil && !isX86Only && !name.trimmingCharacters(in: .whitespaces).isEmpty
+            && !(isWindows && !missingTools.isEmpty)
     }
 
     var body: some View {
@@ -67,6 +71,8 @@ struct NewVMSheet: View {
                             Text("This installer is for Intel/AMD PCs and cannot boot on Apple Silicon. "
                                  + "Download the ARM64 (aarch64) edition instead.")
                                 .font(.footnote).foregroundStyle(.secondary)
+                        } else if isWindows {
+                            windowsNotes
                         } else if probe.architecture == .unknown {
                             Text("It may still boot, but make sure this is an ARM64 (aarch64) UEFI installer.")
                                 .font(.footnote).foregroundStyle(.secondary)
@@ -75,7 +81,7 @@ struct NewVMSheet: View {
                 } header: {
                     Text("Install media")
                 } footer: {
-                    Text("Use an ARM64 (aarch64) installer, such as Ubuntu Server/Desktop for ARM, Fedora aarch64 or Debian arm64.")
+                    Text("Use an ARM64 (aarch64) installer, such as Windows 11 ARM64, Ubuntu for ARM, Fedora aarch64 or Debian arm64.")
                         .foregroundStyle(.secondary)
                 }
 
@@ -132,7 +138,48 @@ struct NewVMSheet: View {
     private func runProbe() async {
         probe = nil
         guard let isoURL else { return }
-        probe = await Task.detached(priority: .userInitiated) { ArchitectureProbe.probeInstallMedia(isoURL) }.value
+        let result = await Task.detached(priority: .userInitiated) { ArchitectureProbe.probeInstallMedia(isoURL) }.value
+        probe = result
+        if result.isWindows {
+            missingTools = QEMUTools.missingPackages
+            // Windows 11 needs 4 GB at minimum and runs far better with 8 GB and 4 cores.
+            cpuCount = max(cpuCount, HostLimits.clampCPU(4))
+            memoryMB = max(memoryMB, HostLimits.clampMemoryMB(8192))
+            diskSizeGB = max(diskSizeGB, 64)
+        }
+    }
+
+    @ViewBuilder
+    private var windowsNotes: some View {
+        if missingTools.isEmpty {
+            Text("Windows runs on PVMRunner's QEMU engine with a virtual TPM. Setup starts by itself; "
+                 + "the screen is 800 × 600 until a display driver is installed.")
+                .font(.footnote).foregroundStyle(.secondary)
+            if drivers.isAvailable {
+                Label("Setup installs the virtio drivers: a faster virtio disk from the start, and networking after the first sign-in.",
+                      systemImage: "checkmark.circle.fill")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else if let progress = drivers.progress {
+                HStack {
+                    Text("Downloading drivers").font(.footnote)
+                    ProgressView(value: progress)
+                    Button("Cancel") { drivers.cancel() }
+                }
+            } else {
+                HStack {
+                    Text("Download the virtio drivers first and Setup installs them for you: a faster disk, and networking after the first sign-in.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button("Download (about 900 MB)") { drivers.download() }
+                }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Windows runs on QEMU with a virtual TPM. Install them once in Terminal:")
+                    .font(.callout)
+                CommandRow(command: MissingTools(packages: missingTools).installCommand)
+                Button("Check Again") { missingTools = QEMUTools.missingPackages }
+            }
+        }
     }
 
     private func create() {
@@ -140,7 +187,7 @@ struct NewVMSheet: View {
         let settings = NewVMSettings(
             name: name.trimmingCharacters(in: .whitespaces), isoURL: isoURL, diskSizeGB: diskSizeGB,
             cpuCount: cpuCount, memoryMB: memoryMB, networkMode: networkMode,
-            bridgedInterfaceID: bridgedInterfaceID)
+            bridgedInterfaceID: bridgedInterfaceID, guestOS: isWindows ? .windows : .linux)
         do {
             let record = try VMFactory().createFromISO(settings)
             library.didImport(record)

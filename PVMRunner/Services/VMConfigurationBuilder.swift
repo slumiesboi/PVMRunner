@@ -5,6 +5,7 @@ import Virtualization
 enum VMConfigurationError: LocalizedError {
     case missingDisk(String)
     case invalidMacPlatform(String)
+    case needsQEMU
 
     var errorDescription: String? {
         switch self {
@@ -12,6 +13,8 @@ enum VMConfigurationError: LocalizedError {
             return "The disk image “\(name)” is missing from the VM folder."
         case .invalidMacPlatform(let detail):
             return "The macOS platform files are invalid: \(detail)"
+        case .needsQEMU:
+            return "Windows VMs run on the QEMU engine, not Virtualization.framework."
         }
     }
 }
@@ -60,6 +63,7 @@ enum VMConfigurationBuilder {
         switch record.guestOS {
         case .linux: try configureLinux(config, record: record, directory: directory)
         case .macOS: try configureMacOS(config, record: record, directory: directory)
+        case .windows: throw VMConfigurationError.needsQEMU
         }
 
         // Disks

@@ -86,7 +86,7 @@ struct LibraryView: View {
         } else {
             Table(library.records, selection: $library.selection) {
                 TableColumn("Name") { record in
-                    Label(record.name, systemImage: record.guestOS == .macOS ? "apple.logo" : "terminal")
+                    Label(record.name, systemImage: record.guestOS.symbolName)
                 }
                 TableColumn("OS") { record in
                     Text(record.guestOSDescription)

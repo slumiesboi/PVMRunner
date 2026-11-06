@@ -8,6 +8,8 @@ enum ArchitectureProbe {
     struct Result {
         var architecture: GuestArchitecture
         var evidence: String
+        /// A Windows installer (has sources/install.wim or install.esd).
+        var isWindows = false
     }
 
     private static let espType = "C12A7328-F81F-11D2-BA4B-00A0C93EC93B"
@@ -66,7 +68,7 @@ enum ArchitectureProbe {
         let head = min(size, 128 * 1024 * 1024)
         let tailStart = size > head ? max(head, size - 64 * 1024 * 1024) : size
 
-        var foundARM = false, foundX86 = false
+        var foundARM = false, foundX86 = false, foundWindows = false
         for (start, length) in [(UInt64(0), head), (tailStart, size - tailStart)] where length > 0 {
             var position = start
             while position < start + length {
@@ -74,28 +76,36 @@ enum ArchitectureProbe {
                 guard let data = read(handle, offset: position, count: count), !data.isEmpty else { break }
                 if !foundARM { foundARM = mediaARMMarkers.contains { data.range(of: $0) != nil } }
                 if !foundX86 { foundX86 = mediaX86Markers.contains { data.range(of: $0) != nil } }
+                if !foundWindows { foundWindows = windowsMarkers.contains { data.range(of: $0) != nil } }
                 position += 4 * 1024 * 1024
             }
         }
+        let os = foundWindows ? "Windows installer with an " : ""
         switch (foundARM, foundX86) {
         case (true, _):
-            return Result(architecture: .arm64, evidence: "ARM64 UEFI boot loader (BOOTAA64.EFI) found")
+            return Result(architecture: .arm64, evidence: os + (foundWindows ? "ARM64 UEFI boot loader" : "ARM64 UEFI boot loader (BOOTAA64.EFI) found"),
+                          isWindows: foundWindows)
         case (false, true):
-            return Result(architecture: .x86, evidence: "Only an x86 UEFI boot loader (BOOTX64.EFI) was found")
+            return Result(architecture: .x86, evidence: foundWindows ? "Windows installer for Intel/AMD PCs (x64 only)"
+                          : "Only an x86 UEFI boot loader (BOOTX64.EFI) was found", isWindows: foundWindows)
         default:
-            return Result(architecture: .unknown, evidence: "No UEFI boot loader found in the image")
+            return Result(architecture: .unknown, evidence: foundWindows ? "Windows installer, architecture unknown"
+                          : "No UEFI boot loader found in the image", isWindows: foundWindows)
         }
     }
 
     private static let mediaARMMarkers = markerVariants(["BOOTAA64.EFI", "BOOTAA64EFI"])
     private static let mediaX86Markers = markerVariants(["BOOTX64.EFI", "BOOTX64 EFI", "BOOTIA32.EFI"])
+    private static let windowsMarkers = markerVariants(["install.wim", "install.esd"])
 
-    /// Upper and lower case ASCII (ISO 9660 / Rock Ridge / FAT) plus UCS-2 big-endian (Joliet).
+    /// Upper and lower case ASCII (ISO 9660 / Rock Ridge / FAT), UCS-2 big-endian (Joliet)
+    /// and UTF-16 little-endian (UDF file identifiers, as on Windows ISOs).
     private static func markerVariants(_ names: [String]) -> [Data] {
         names.flatMap { name -> [Data] in
-            [name, name.lowercased()].flatMap { variant -> [Data] in
+            [name, name.uppercased(), name.lowercased()].flatMap { variant -> [Data] in
                 let joliet = variant.utf16.flatMap { [UInt8($0 >> 8), UInt8($0 & 0xFF)] }
-                return [Data(variant.utf8), Data(joliet)]
+                let udf = variant.utf16.flatMap { [UInt8($0 & 0xFF), UInt8($0 >> 8)] }
+                return [Data(variant.utf8), Data(joliet), Data(udf)]
             }
         }
     }

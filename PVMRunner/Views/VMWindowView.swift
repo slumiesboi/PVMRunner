@@ -32,8 +32,11 @@ private struct VMWindowContent: View {
                 Color.black
                 if let vm = controller.virtualMachine {
                     VMDisplayView(virtualMachine: vm)
+                } else if let machine = controller.qemuMachine {
+                    QEMUDisplayView(socketPath: machine.run.vnc)
+                        .id(ObjectIdentifier(machine))
                 }
-                if controller.virtualMachine == nil || controller.state == .starting {
+                if !controller.isLoaded || controller.state == .starting {
                     placeholder
                 }
             }
@@ -149,11 +152,11 @@ extension VMWindowContent {
     /// Eject or swap the ISO while the VM runs; when stopped, changes apply at the next start.
     @ViewBuilder
     var mediaMenu: some View {
-        let attached = controller.virtualMachine == nil ? record.isoPath : controller.attachedMediaPath
+        let attached = !controller.isLoaded ? record.isoPath : controller.attachedMediaPath
         Menu {
             if let attached {
                 Text("Attached: \((attached as NSString).lastPathComponent)")
-                if controller.mediaAttachedAtBoot && controller.virtualMachine != nil {
+                if controller.mediaAttachedAtBoot && controller.isLoaded {
                     Button("Eject at Next Start") { Task { await eject() } }
                 } else {
                     Button("Eject") { Task { await eject() } }
@@ -164,10 +167,11 @@ extension VMWindowContent {
             Button(attached == nil ? "Attach ISO…" : "Replace ISO…") {
                 if let url = OpenPanels.chooseISO() { Task { await attach(url) } }
             }
-            .disabled(controller.mediaAttachedAtBoot && controller.virtualMachine != nil)
-            if controller.virtualMachine != nil && !controller.supportsLiveMedia {
+            .disabled(controller.mediaAttachedAtBoot && controller.isLoaded)
+            if controller.isLoaded && !controller.supportsLiveMedia {
                 Divider()
-                Text("Changes apply at the next start (live media needs macOS 15)")
+                Text(record.guestOS.usesQEMU ? "Changes apply at the next start"
+                     : "Changes apply at the next start (live media needs macOS 15)")
             }
         } label: {
             Label("Media", systemImage: attached == nil ? "opticaldisc" : "opticaldisc.fill")
@@ -176,7 +180,7 @@ extension VMWindowContent {
     }
 
     private func eject() async {
-        if controller.virtualMachine != nil {
+        if controller.isLoaded {
             switch await controller.ejectMedia() {
             case .ejected:
                 controller.notices.append("ISO ejected. It will not be attached at the next start either.")
@@ -195,7 +199,7 @@ extension VMWindowContent {
     private func attach(_ url: URL) async {
         if controller.supportsLiveMedia {
             guard await controller.attachMedia(url) else { return }
-        } else if controller.virtualMachine != nil {
+        } else if controller.isLoaded {
             controller.notices.append("“\(url.lastPathComponent)” will be attached the next time the VM starts.")
         }
         var updated = record

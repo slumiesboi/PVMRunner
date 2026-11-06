@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Virtualization
 
@@ -25,16 +26,19 @@ enum VMRunState: String {
     var isActive: Bool { self != .stopped && self != .error }
 }
 
-/// Owns one running `VZVirtualMachine`. The VM lives on the main queue, so every
-/// interaction happens on the main actor.
+/// Owns one running VM: a `VZVirtualMachine` for Linux and macOS guests, or a `QEMUMachine`
+/// for Windows. Both live on the main actor.
 @MainActor
 final class VMController: NSObject, ObservableObject {
     let vmID: UUID
     @Published private(set) var state: VMRunState = .stopped
     @Published private(set) var virtualMachine: VZVirtualMachine?
+    @Published private(set) var qemuMachine: QEMUMachine?
     @Published private(set) var effectiveNetworkMode: NetworkMode?
     @Published var errorMessage: String?
     @Published var notices: [String] = []
+    /// Set by the library to record that a Windows guest is ready for its virtio disk.
+    var onVirtioDriverLoaded: (() -> Void)?
     /// Path of the ISO currently attached as a USB drive, if any.
     @Published private(set) var attachedMediaPath: String?
     /// True when the attached ISO was configured at start. Virtualization.framework does not
@@ -50,6 +54,7 @@ final class VMController: NSObject, ObservableObject {
     }
 
     private var stateObservation: NSKeyValueObservation?
+    private var qemuObservation: AnyCancellable?
     private(set) var networkRelay: SocketVmnetRelay?
 
     init(vmID: UUID) {
@@ -57,15 +62,21 @@ final class VMController: NSObject, ObservableObject {
     }
 
     var canStart: Bool { state == .stopped || state == .error }
-    var canPause: Bool { virtualMachine?.canPause ?? false }
-    var canResume: Bool { virtualMachine?.canResume ?? false }
-    var canRequestStop: Bool { virtualMachine?.canRequestStop ?? false }
-    var canForceStop: Bool { virtualMachine?.canStop ?? false }
+    var canPause: Bool { qemuMachine.map { $0.status == .running } ?? virtualMachine?.canPause ?? false }
+    var canResume: Bool { qemuMachine.map { $0.status == .paused } ?? virtualMachine?.canResume ?? false }
+    var canRequestStop: Bool { qemuMachine.map { $0.status == .running } ?? virtualMachine?.canRequestStop ?? false }
+    var canForceStop: Bool { qemuMachine.map { $0.status != .stopped } ?? virtualMachine?.canStop ?? false }
+    /// True while a VM of either engine exists.
+    var isLoaded: Bool { virtualMachine != nil || qemuMachine != nil }
 
     func start(record: VMRecord, directory: URL) async {
         guard canStart else { return }
         errorMessage = nil
         notices = []
+        if record.guestOS.usesQEMU {
+            await startQEMU(record: record, directory: directory)
+            return
+        }
         if let busy = Self.fileInUse(record: record, directory: directory) {
             // Without this check the framework reports a misleading "The boot loader is invalid".
             errorMessage = "“\(record.name)” is already running in another app or window "
@@ -120,12 +131,72 @@ final class VMController: NSObject, ObservableObject {
         try await vm.start()
     }
 
+    private func startQEMU(record: VMRecord, directory: URL) async {
+        let tools: QEMUTools
+        switch QEMUTools.locate() {
+        case .success(let found): tools = found
+        case .failure(let missing):
+            errorMessage = missing.localizedDescription
+            state = .error
+            return
+        }
+        state = .starting
+        do {
+            let machine = try QEMUMachine(record: record, directory: directory, tools: tools)
+            notices.append(contentsOf: machine.notices)
+            effectiveNetworkMode = machine.effectiveNetworkMode
+            attachedMediaPath = machine.isoAttached ? record.isoPath : nil
+            // QEMU can unplug the boot ISO live, unlike Virtualization.framework.
+            mediaAttachedAtBoot = false
+            machine.onExit = { [weak self] message in
+                guard let self else { return }
+                self.teardown()
+                if let message {
+                    self.errorMessage = "The virtual machine stopped unexpectedly: \(message)"
+                    self.state = .error
+                }
+            }
+            machine.onVirtioDriverLoaded = { [weak self] in
+                self?.notices.append("Windows has loaded the virtio storage driver. The disk switches to virtio the next time the VM starts.")
+                self?.onVirtioDriverLoaded?()
+            }
+            qemuObservation = machine.$status.sink { [weak self] status in
+                switch status {
+                case .starting: self?.state = .starting
+                case .running: self?.state = .running
+                case .paused: self?.state = .paused
+                case .stopping: self?.state = .stopping
+                case .stopped: break
+                }
+            }
+            qemuMachine = machine
+            try await machine.start()
+        } catch {
+            qemuMachine?.terminateNow()
+            fail(error)
+        }
+    }
+
+    /// Kills QEMU guests synchronously when the app quits (Virtualization.framework VMs end
+    /// with the process on their own).
+    func terminateForQuit() {
+        qemuMachine?.terminateNow()
+    }
+
     func pause() async {
+        if let qemuMachine {
+            do { try await qemuMachine.pause() } catch { fail(error) }
+            return
+        }
         guard let vm = virtualMachine, vm.canPause else { return }
         do { try await vm.pause() } catch { fail(error) }
     }
 
     func resume() async {
+        if let qemuMachine {
+            do { try await qemuMachine.resume() } catch { fail(error) }
+            return
+        }
         guard let vm = virtualMachine, vm.canResume else { return }
         do { try await vm.resume() } catch { fail(error) }
     }
@@ -135,6 +206,7 @@ final class VMController: NSObject, ObservableObject {
 
     /// Whether ISOs can be ejected and attached while the VM runs (macOS 15+).
     var supportsLiveMedia: Bool {
+        if qemuMachine != nil { return state == .running || state == .paused }
         guard let vm = virtualMachine, state == .running || state == .paused else { return false }
         if #available(macOS 15.0, *) { return !vm.usbControllers.isEmpty }
         return false
@@ -144,6 +216,16 @@ final class VMController: NSObject, ObservableObject {
     /// start if it was attached at boot.
     @discardableResult
     func ejectMedia() async -> EjectResult {
+        if let qemuMachine {
+            do {
+                try await qemuMachine.ejectMedia()
+                attachedMediaPath = nil
+                return .ejected
+            } catch {
+                errorMessage = "Could not eject the ISO: \(error.localizedDescription)"
+                return .failed
+            }
+        }
         if #available(macOS 15.0, *), let usb = virtualMachine?.usbControllers.first,
            let device = usb.usbDevices.first(where: { $0 is VZUSBMassStorageDevice }) {
             do {
@@ -165,6 +247,16 @@ final class VMController: NSObject, ObservableObject {
     /// any ISO already attached. Returns true on success.
     @discardableResult
     func attachMedia(_ url: URL) async -> Bool {
+        if let qemuMachine {
+            do {
+                try await qemuMachine.attachMedia(url)
+                attachedMediaPath = url.path
+                return true
+            } catch {
+                errorMessage = "Could not attach “\(url.lastPathComponent)”: \(error.localizedDescription)"
+                return false
+            }
+        }
         guard #available(macOS 15.0, *), let usb = virtualMachine?.usbControllers.first else { return false }
         if usb.usbDevices.contains(where: { $0 is VZUSBMassStorageDevice }) {
             guard await ejectMedia() == .ejected else { return false }
@@ -182,12 +274,20 @@ final class VMController: NSObject, ObservableObject {
     }
 
     func requestStop() {
+        if let qemuMachine {
+            Task { do { try await qemuMachine.requestStop() } catch { fail(error) } }
+            return
+        }
         guard let vm = virtualMachine, vm.canRequestStop else { return }
         do { try vm.requestStop() } catch { fail(error) }
     }
 
     /// Immediately powers off the VM, like pulling the plug.
     func forceStop() async {
+        if let qemuMachine {
+            qemuMachine.forceStop()
+            return
+        }
         guard let vm = virtualMachine, vm.canStop else { return }
         do { try await vm.stop() } catch { fail(error) }
         teardown()
@@ -208,6 +308,8 @@ final class VMController: NSObject, ObservableObject {
         mediaAttachedAtBoot = false
         stateObservation = nil
         virtualMachine = nil
+        qemuObservation = nil
+        qemuMachine = nil
         networkRelay?.stop()
         networkRelay = nil
         effectiveNetworkMode = nil
@@ -216,7 +318,8 @@ final class VMController: NSObject, ObservableObject {
 
     private func fail(_ error: Error) {
         errorMessage = (error as NSError).localizedDescription
-        if virtualMachine?.state != .running && virtualMachine?.state != .paused {
+        if qemuMachine.map({ $0.status == .stopped || $0.status == .starting }) ?? true
+            && virtualMachine?.state != .running && virtualMachine?.state != .paused {
             teardown()
             state = .error
         }

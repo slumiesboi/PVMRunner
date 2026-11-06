@@ -25,55 +25,67 @@ struct VMDetailView: View {
             header
             Divider()
             Form {
-                Section("Hardware") {
-                    Stepper(value: $draft.cpuCount, in: HostLimits.cpuRange) {
-                        LabeledContent("CPUs", value: "\(draft.cpuCount)")
-                    }
-                    Stepper(value: $draft.memoryMB, in: HostLimits.memoryRangeMB, step: 512) {
-                        LabeledContent("Memory", value: MemoryFormat.string(mb: draft.memoryMB))
-                    }
-                }
-
-                Section("Network") {
-                    NetworkSettingsView(mode: $draft.networkMode, interfaceID: $draft.bridgedInterfaceID)
-                    LabeledContent("MAC address") {
-                        HStack {
-                            Text(draft.macAddress).monospaced().textSelection(.enabled)
-                            Button {
-                                draft.macAddress = VZMACAddress.randomLocallyAdministered().string
-                            } label: {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                            }
-                            .buttonStyle(.borderless)
-                            .help("Generate a new random locally administered MAC address")
+                Group {
+                    Section("Hardware") {
+                        Stepper(value: $draft.cpuCount, in: HostLimits.cpuRange) {
+                            LabeledContent("CPUs", value: "\(draft.cpuCount)")
+                        }
+                        Stepper(value: $draft.memoryMB, in: HostLimits.memoryRangeMB, step: 512) {
+                            LabeledContent("Memory", value: MemoryFormat.string(mb: draft.memoryMB))
                         }
                     }
-                }
 
-                Section {
-                    if let iso = draft.isoPath {
-                        LabeledContent("ISO") {
+                    Section("Network") {
+                        NetworkSettingsView(mode: $draft.networkMode, interfaceID: $draft.bridgedInterfaceID)
+                        LabeledContent("MAC address") {
                             HStack {
-                                Text((iso as NSString).lastPathComponent)
-                                    .lineLimit(1).truncationMode(.middle)
-                                    .help(iso)
-                                Button("Detach") { draft.isoPath = nil }
+                                Text(draft.macAddress).monospaced().textSelection(.enabled)
+                                Button {
+                                    draft.macAddress = VZMACAddress.randomLocallyAdministered().string
+                                } label: {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                }
+                                .buttonStyle(.borderless)
+                                .help("Generate a new random locally administered MAC address")
                             }
                         }
-                    } else {
-                        Button("Attach ISO…") {
-                            if let url = OpenPanels.chooseISO() { draft.isoPath = url.path }
-                        }
                     }
-                } header: {
-                    Text("Removable media")
-                } footer: {
-                    Text("The image is attached as a read-only USB mass storage device, for install or recovery media.")
-                        .foregroundStyle(.secondary)
+
+                    Section {
+                        if let iso = draft.isoPath {
+                            LabeledContent("ISO") {
+                                HStack {
+                                    Text((iso as NSString).lastPathComponent)
+                                        .lineLimit(1).truncationMode(.middle)
+                                        .help(iso)
+                                    Button("Detach") { draft.isoPath = nil }
+                                }
+                            }
+                        } else {
+                            Button("Attach ISO…") {
+                                if let url = OpenPanels.chooseISO() { draft.isoPath = url.path }
+                            }
+                        }
+                    } header: {
+                        Text("Removable media")
+                    } footer: {
+                        Text("The image is attached read-only, for install or recovery media.")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(locked)
+
+                if draft.guestOS == .windows {
+                    WindowsDriversSection()
+                    WindowsDiskSection(bus: $draft.diskBus)
+                        .disabled(locked)
                 }
 
                 Section("Info") {
                     LabeledContent("Guest", value: "\(draft.guestOSDescription) (\(draft.guestOS.displayName), ARM64)")
+                    if draft.guestOS.usesQEMU {
+                        LabeledContent("Engine", value: "QEMU with Hypervisor.framework, TPM 2.0")
+                    }
                     LabeledContent("Disks", value: draft.diskFileNames.joined(separator: ", "))
                     LabeledContent("Imported from") {
                         Text(draft.sourcePVMPath).lineLimit(1).truncationMode(.middle).help(draft.sourcePVMPath)
@@ -85,7 +97,6 @@ struct VMDetailView: View {
                 }
             }
             .formStyle(.grouped)
-            .disabled(locked)
             .onChange(of: draft) { _, newValue in
                 if newValue != record { library.update(newValue) }
             }
@@ -258,5 +269,77 @@ struct CommandRow: View {
 enum MemoryFormat {
     static func string(mb: Int) -> String {
         mb % 1024 == 0 ? "\(mb / 1024) GB" : String(format: "%.1f GB", Double(mb) / 1024)
+    }
+}
+
+/// Download state of the virtio-win drivers and how to install them in Windows.
+struct WindowsDriversSection: View {
+    @ObservedObject private var drivers = WindowsDrivers.shared
+
+    var body: some View {
+        Section {
+            if drivers.isAvailable {
+                Label("Downloaded. The driver drive is attached at the next start.", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                Text("In Windows, open PowerShell as administrator and run:")
+                    .font(.callout)
+                CommandRow(command: WindowsDrivers.installCommand)
+            } else if let progress = drivers.progress {
+                HStack {
+                    ProgressView(value: progress)
+                    Text("\(Int(progress * 100))%").monospacedDigit()
+                    Button("Cancel") { drivers.cancel() }
+                }
+            } else {
+                Button("Download Drivers (about 900 MB)") { drivers.download() }
+            }
+            if let error = drivers.errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
+            }
+        } header: {
+            Text("Windows drivers")
+        } footer: {
+            Text("Windows has no built-in driver for the VM's network card. The free virtio-win drivers "
+                 + "(from the Fedora Project) add networking. Windows VMs created after the download install "
+                 + "them by themselves at the first sign-in. Until then, choose “I don't have internet” "
+                 + "during setup to create a local account.")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// Moves a Windows VM's disk between NVMe (in-box driver) and virtio (faster, needs the
+/// virtio-win storage driver). The switch to virtio goes through `.preparingVirtio`.
+struct WindowsDiskSection: View {
+    @Binding var bus: QEMUDiskBus?
+    @ObservedObject private var drivers = WindowsDrivers.shared
+
+    var body: some View {
+        Section {
+            switch bus ?? .nvme {
+            case .nvme:
+                LabeledContent("Controller", value: "NVMe")
+                Button("Switch to Virtio") { bus = .preparingVirtio }
+                    .disabled(!drivers.isAvailable)
+            case .preparingVirtio:
+                LabeledContent("Controller", value: "NVMe, switching to virtio")
+                Text("Start Windows and install the drivers with the command above, if you haven't yet. "
+                     + "Once Windows has loaded the virtio storage driver, the disk switches at the next start.")
+                    .font(.callout)
+                Button("Cancel Switch") { bus = .nvme }
+            case .virtio:
+                LabeledContent("Controller", value: "Virtio, dedicated I/O thread")
+                Button("Switch Back to NVMe") { bus = .nvme }
+            }
+        } header: {
+            Text("Disk")
+        } footer: {
+            Text(bus == .virtio
+                 ? "If Windows stops at INACCESSIBLE_BOOT_DEVICE, switch back to NVMe."
+                 : "Virtio disks are faster than NVMe (in testing, about 1.5× for random writes and 2× for "
+                   + "sequential writes) but need the storage driver from the Windows drivers download. "
+                   + "Finish Windows setup before switching.")
+                .foregroundStyle(.secondary)
+        }
     }
 }
