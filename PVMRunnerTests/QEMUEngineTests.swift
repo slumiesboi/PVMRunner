@@ -117,22 +117,87 @@ final class QEMUEngineTests: XCTestCase {
         XCTAssertFalse(plain.arguments.contains("-netdev"))
     }
 
-    /// With the virtio-win ISO downloaded, a new VM starts on virtio, the setup drive carries
-    /// the storage driver for Setup, and the answer file installs the rest at first sign-in.
+    /// ramfb by default; virtio-gpu once the display driver is in, with ramfb alongside while
+    /// an ISO is attached, each screen on its own VNC socket.
+    func testDisplayModes() throws {
+        let tools = QEMUTools(qemu: URL(fileURLWithPath: "/q"), firmware: URL(fileURLWithPath: "/fw"),
+                              swtpm: URL(fileURLWithPath: "/s"))
+        var (record, vmDirectory) = try windowsRecord(iso: try makeWindowsISO())
+        let run = QEMUCommandBuilder.RunPaths(directory: directory.appendingPathComponent("run"))
+        func build(_ display: QEMUDisplay?, iso: Bool = true) throws -> QEMUCommandBuilder.Output {
+            record.display = display
+            var copy = record
+            if !iso { copy.isoPath = nil }
+            return try QEMUCommandBuilder.build(record: copy, directory: vmDirectory, run: run, tools: tools)
+        }
+
+        let basic = try build(nil)
+        XCTAssertEqual(basic.screens, .ramfb)
+        XCTAssertTrue(basic.arguments.contains("ramfb,id=fb"))
+        XCTAssertFalse(basic.arguments.contains { $0.hasPrefix("virtio-gpu") })
+        XCTAssertTrue(basic.arguments.contains("unix:\(run.vnc)"))
+
+        let preparing = try build(.preparingVirtio, iso: false)
+        XCTAssertEqual(preparing.screens, .both)
+        XCTAssertTrue(preparing.arguments.contains("ramfb,id=fb"))
+        XCTAssertTrue(preparing.arguments.contains("virtio-gpu-pci,id=gpu,xres=1920,yres=1200"))
+        XCTAssertTrue(preparing.arguments.contains("unix:\(run.vnc),display=fb"))
+        XCTAssertTrue(preparing.arguments.contains("unix:\(run.gpuVNC),id=gpuvnc,display=gpu"))
+
+        XCTAssertEqual(try build(.virtio).screens, .both, "the ISO's boot prompt needs ramfb")
+        record.displayWidth = 2560
+        record.displayHeight = 1440
+        let virtio = try build(.virtio, iso: false)
+        XCTAssertEqual(virtio.screens, .gpu)
+        XCTAssertFalse(virtio.arguments.contains { $0.hasPrefix("ramfb") })
+        XCTAssertTrue(virtio.arguments.contains("virtio-gpu-pci,id=gpu,xres=2560,yres=1440"))
+        XCTAssertTrue(virtio.arguments.contains("unix:\(run.vnc)"))
+    }
+
+    /// The screen view treats QEMU's black "Display output is not active" placeholder as unused.
+    func testBlankScreenDetection() throws {
+        func image(_ draw: (CGContext) -> Void) throws -> CGImage {
+            let context = try XCTUnwrap(CGContext(data: nil, width: 1280, height: 800, bitsPerComponent: 8, bytesPerRow: 0,
+                                                  space: CGColorSpaceCreateDeviceRGB(),
+                                                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue))
+            context.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: 1280, height: 800))
+            draw(context)
+            return try XCTUnwrap(context.makeImage())
+        }
+        let placeholder = try image { context in
+            context.setFillColor(CGColor(gray: 0.7, alpha: 1))
+            context.fill(CGRect(x: 520, y: 395, width: 232, height: 10))
+        }
+        XCTAssertTrue(QEMUScreenView.isBlank(placeholder))
+        let desktop = try image { context in
+            context.setFillColor(CGColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1))
+            context.fill(CGRect(x: 0, y: 60, width: 1280, height: 740))
+        }
+        XCTAssertFalse(QEMUScreenView.isBlank(desktop))
+    }
+
+    /// With the virtio-win ISO downloaded, a new VM starts on virtio disk and screen, the setup
+    /// drive carries the storage and display drivers for Setup, and the answer file installs
+    /// the rest at first sign-in.
     func testSetupDriveCarriesVirtioDrivers() throws {
         let (plain, _) = try windowsRecord(iso: try makeWindowsISO())
         XCTAssertNil(plain.diskBus, "without drivers a new VM uses NVMe")
+        XCTAssertNil(plain.display, "and the basic screen")
         guard let driversISO = WindowsDrivers.installedISO else {
             throw XCTSkip("The virtio-win ISO isn't downloaded.")
         }
         let (record, vmDirectory) = try windowsRecord(iso: try makeWindowsISO(), driversISO: driversISO)
         XCTAssertEqual(record.diskBus, .virtio)
+        XCTAssertEqual(record.display, .virtio)
 
         let setup = try WindowsSetupFiles.write(in: vmDirectory)
-        try WindowsSetupFiles.addStorageDriver(in: setup, from: driversISO)
+        try WindowsSetupFiles.addDrivers(in: setup, from: driversISO)
         let driver = setup.appendingPathComponent("$WinPEDriver$/viostor")
         let files = try FileManager.default.contentsOfDirectory(atPath: driver.path).sorted()
         XCTAssertEqual(files, ["viostor.cat", "viostor.inf", "viostor.sys"])
+        let display = try FileManager.default.contentsOfDirectory(atPath: setup.appendingPathComponent("$WinPEDriver$/viogpudo").path)
+        XCTAssertTrue(display.contains("viogpudo.inf") && display.contains("viogpudo.sys"))
         XCTAssertFalse(FileManager.default.fileExists(atPath: vmDirectory.appendingPathComponent(".drivers-partial").path))
         XCTAssertTrue(FileManager.default.isDeletableFile(atPath: driver.appendingPathComponent("viostor.sys").path))
 
@@ -257,6 +322,53 @@ final class QEMUEngineTests: XCTestCase {
         }
         XCTAssertGreaterThan(used, 0, "Windows did not start its virtio driver on the boot disk")
         XCTAssertEqual(controller.state, .running)
+        await controller.forceStop()
+        try await waitFor { controller.state == .stopped && controller.qemuMachine == nil }
+    }
+
+    /// Switches an installed Windows VM to virtio-gpu: during the switching start the window
+    /// must move to the virtio screen once Windows' display driver draws on it, and the next
+    /// start must show Windows on virtio-gpu alone at the chosen resolution.
+    /// Set PVMRUNNER_WINDOWS_VM to a copy of a Windows VM folder (it is modified).
+    func testWindowsSwitchesToVirtioGPU() async throws {
+        guard let path = ProcessInfo.processInfo.environment["PVMRUNNER_WINDOWS_VM"] else {
+            throw XCTSkip("Set PVMRUNNER_WINDOWS_VM to a copy of an installed Windows VM folder")
+        }
+        let folder = URL(fileURLWithPath: path)
+        let store = VMLibraryStore(rootURL: folder.deletingLastPathComponent())
+        var record = try XCTUnwrap(store.loadAll().first { store.directory(for: $0).standardizedFileURL == folder.standardizedFileURL })
+        record.isoPath = nil
+        record.display = .preparingVirtio
+        record.displayWidth = 1680
+        record.displayHeight = 1050
+
+        let controller = VMController(vmID: record.id)
+        let loaded = expectation(description: "virtio display driver loaded")
+        controller.onVirtioDisplayLoaded = { loaded.fulfill() }
+        await controller.start(record: record, directory: folder)
+        XCTAssertNil(controller.errorMessage)
+        var machine = try XCTUnwrap(controller.qemuMachine)
+        XCTAssertEqual(machine.screens, .both)
+        let both = QEMUScreenView(socketPath: machine.run.vnc, gpuSocketPath: machine.run.gpuVNC)
+        await fulfillment(of: [loaded], timeout: 240)
+        try await waitFor(seconds: 120) { both.showsGPU }
+        both.disconnect()
+        await controller.forceStop()
+        try await waitFor { controller.state == .stopped && controller.qemuMachine == nil }
+
+        record.display = .virtio
+        await controller.start(record: record, directory: folder)
+        machine = try XCTUnwrap(controller.qemuMachine)
+        XCTAssertEqual(machine.screens, .gpu)
+        let client = RFBClient(socketPath: machine.run.vnc)
+        let desktop = expectation(description: "Windows on virtio-gpu")
+        desktop.assertForOverFulfill = false
+        client.onFrame = { image in
+            if image.width == 1680 && image.height == 1050 && !QEMUScreenView.isBlank(image) { desktop.fulfill() }
+        }
+        client.start()
+        await fulfillment(of: [desktop], timeout: 240)
+        client.stop()
         await controller.forceStop()
         try await waitFor { controller.state == .stopped && controller.qemuMachine == nil }
     }

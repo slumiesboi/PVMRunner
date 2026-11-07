@@ -33,7 +33,8 @@ private struct VMWindowContent: View {
                 if let vm = controller.virtualMachine {
                     VMDisplayView(virtualMachine: vm)
                 } else if let machine = controller.qemuMachine {
-                    QEMUDisplayView(socketPath: machine.run.vnc)
+                    QEMUDisplayView(socketPath: machine.run.vnc,
+                                    gpuSocketPath: machine.screens == .both ? machine.run.gpuVNC : nil)
                         .id(ObjectIdentifier(machine))
                 }
                 if !controller.isLoaded || controller.state == .starting {

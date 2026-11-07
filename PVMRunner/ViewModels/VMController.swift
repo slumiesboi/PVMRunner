@@ -39,6 +39,8 @@ final class VMController: NSObject, ObservableObject {
     @Published var notices: [String] = []
     /// Set by the library to record that a Windows guest is ready for its virtio disk.
     var onVirtioDriverLoaded: (() -> Void)?
+    /// Called when Windows has loaded the virtio display driver (a VM switching to virtio-gpu).
+    var onVirtioDisplayLoaded: (() -> Void)?
     /// Path of the ISO currently attached as a USB drive, if any.
     @Published private(set) var attachedMediaPath: String?
     /// True when the attached ISO was configured at start. Virtualization.framework does not
@@ -159,6 +161,10 @@ final class VMController: NSObject, ObservableObject {
             machine.onVirtioDriverLoaded = { [weak self] in
                 self?.notices.append("Windows has loaded the virtio storage driver. The disk switches to virtio the next time the VM starts.")
                 self?.onVirtioDriverLoaded?()
+            }
+            machine.onVirtioDisplayLoaded = { [weak self] in
+                self?.notices.append("Windows has loaded the virtio display driver. The screen switches to virtio-gpu the next time the VM starts.")
+                self?.onVirtioDisplayLoaded?()
             }
             qemuObservation = machine.$status.sink { [weak self] status in
                 switch status {

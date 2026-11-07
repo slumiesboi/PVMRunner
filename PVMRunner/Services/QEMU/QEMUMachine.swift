@@ -13,6 +13,8 @@ final class QEMUMachine: ObservableObject {
     var onExit: ((String?) -> Void)?
     /// Called once when Windows has loaded the virtio storage driver for the probe disk.
     var onVirtioDriverLoaded: (() -> Void)?
+    /// Called once when Windows has loaded the virtio display driver.
+    var onVirtioDisplayLoaded: (() -> Void)?
 
     private let launch: QEMUCommandBuilder.Output
     private let tools: QEMUTools
@@ -44,6 +46,7 @@ final class QEMUMachine: ObservableObject {
     var effectiveNetworkMode: NetworkMode { launch.effectiveNetworkMode }
     var notices: [String] { launch.notices }
     var isoAttached: Bool { launch.isoAttached }
+    var screens: QEMUCommandBuilder.Screens { launch.screens }
 
     func start() async throws {
         let log = try openLog()
@@ -73,6 +76,9 @@ final class QEMUMachine: ObservableObject {
         }
         if record.diskBus == .preparingVirtio {
             watchVirtioProbe()
+        }
+        if record.display == .preparingVirtio {
+            watchDisplayDriver()
         }
     }
 
@@ -269,8 +275,25 @@ final class QEMUMachine: ObservableObject {
         }
     }
 
-    /// Requests completed on a virtio disk's queue since its driver set it up. For the probe
-    /// disk and tests.
+    /// The firmware drives virtio-gpu too, then resets it when Windows takes over. Requests
+    /// after that reset (the count dropping) come from Windows' own display driver.
+    private func watchDisplayDriver() {
+        Task {
+            var last = 0, reset = false
+            while status != .stopping && status != .stopped {
+                let used = await virtioQueueUsed(device: "gpu", queue: 0)
+                if used < last { reset = true }
+                if reset && used > 0 {
+                    onVirtioDisplayLoaded?()
+                    return
+                }
+                last = used
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+    }
+
+    /// Requests completed on a virtio device's queue since its driver set it up.
     func virtioQueueUsed(device: String, queue: Int) async -> Int {
         let path = "/machine/peripheral/\(device)/virtio-backend"
         let result = try? await qmp?.execute("x-query-virtio-queue-status", arguments: ["path": path, "queue": queue])

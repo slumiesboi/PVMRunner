@@ -130,14 +130,15 @@ Windows VM (4 CPUs, 8 GB, 64 GB by default). The screen shows in the VM window l
 What PVMRunner sets up:
 
 - **Devices Windows drives with built-in drivers:** an NVMe disk (or virtio, see below), a USB
-  keyboard and tablet, and a ramfb screen. The UEFI variable store is created with the screen preset to 1024 × 768, ramfb's
-  largest mode (the firmware alone would start at 800 × 600).
+  keyboard and tablet, and a ramfb screen (or virtio-gpu, see below). The UEFI variable store is
+  created with the screen preset to 1024 × 768, ramfb's largest mode (the firmware alone would
+  start at 800 × 600).
 - **TPM 2.0** from `swtpm`, with its state in the VM folder.
 - **Setup answers:** a small read-only USB drive with `autounattend.xml` that skips Setup's Secure
   Boot check (the Homebrew firmware has no Secure Boot), lets first-run setup continue offline and,
   at the first sign-in, installs the virtio drivers from the driver drive. With the drivers
-  downloaded, the drive also carries the virtio storage driver in `$WinPEDriver$`, which Setup
-  loads by itself. Everything else in Setup is up to you.
+  downloaded, the drive also carries the virtio storage and display drivers in `$WinPEDriver$`,
+  which Setup loads and installs by itself. Everything else in Setup is up to you.
 - **Boot prompt:** on a fresh VM, PVMRunner presses a key for the installer's "Press any key to boot
   from CD or DVD" prompt.
 
@@ -147,9 +148,9 @@ Virtual Machine sheet or **Download Drivers** in a Windows VM's settings fetches
 driver ISO is attached to every Windows VM from then on. This is how Parallels does it too: an
 answer file plus a driver package installed at the first sign-in.
 
-- **New VMs created after the download** install onto a virtio disk from the start (Setup loads
-  the storage driver from the setup drive) and install the remaining drivers, networking included,
-  by themselves at the first sign-in. First-run setup still runs offline, so choose
+- **New VMs created after the download** install onto a virtio disk and use the virtio GPU from
+  the start (Setup installs both drivers from the setup drive), and install the remaining drivers,
+  networking included, by themselves at the first sign-in. First-run setup still runs offline, so choose
   **I don't have internet** and create a local account.
 - **Older VMs:** choose **I don't have internet** during setup, then in Windows open PowerShell as
   administrator and run the command shown in the VM's settings, which installs every ARM64 driver
@@ -164,7 +165,18 @@ directly would stop Windows at INACCESSIBLE_BOOT_DEVICE. While on virtio, the sm
 attached as NVMe so Windows keeps its NVMe driver ready, and **Switch Back to NVMe** can undo the
 switch. Finish Windows setup first: shutting Windows down during first-run setup breaks setup.
 
-Limits: no 3D acceleration or resizable screen, no shared clipboard or folders, and the ISO is read
+**Screen.** The basic screen is ramfb, a plain framebuffer Windows shows at 1024 × 768 with its
+Basic Display driver. The virtio GPU, with the virtio-win display driver (`viogpudo`), runs at the
+resolution picked in the VM's Screen settings, from 1280 × 800 to 3840 × 2160; the change applies
+at the next start, because Windows' own resolution menu isn't available with this driver. It's a
+display driver only: no 3D acceleration. Older VMs switch with **Switch to Virtio GPU** in two
+starts, like the disk: first the VM gets both screens, and once Windows has loaded the display
+driver, the next start uses virtio-gpu alone. While an ISO is attached, ramfb stays alongside,
+because Windows Setup and the installer's "Press any key" prompt can only draw on a plain
+framebuffer; the window shows whichever screen Windows is using. If the screen stays black on
+virtio-gpu, **Switch Back to Basic**.
+
+Limits: no 3D acceleration, the screen doesn't follow the window size, no shared clipboard or folders, and the ISO is read
 over emulated USB, so installing takes longer than on a PC. Windows runs unactivated until you enter
 a product key. Windows VMs from Parallels can't be imported; install fresh instead.
 

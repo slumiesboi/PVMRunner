@@ -79,6 +79,8 @@ struct VMDetailView: View {
                     WindowsDriversSection()
                     WindowsDiskSection(bus: $draft.diskBus)
                         .disabled(locked)
+                    WindowsDisplaySection(display: $draft.display, width: $draft.displayWidth, height: $draft.displayHeight)
+                        .disabled(locked)
                 }
 
                 Section("Info") {
@@ -339,6 +341,63 @@ struct WindowsDiskSection: View {
                  : "Virtio disks are faster than NVMe (in testing, about 1.5× for random writes and 2× for "
                    + "sequential writes) but need the storage driver from the Windows drivers download. "
                    + "Finish Windows setup before switching.")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// Moves a Windows VM's screen between ramfb (Basic Display driver, 1024 × 768) and
+/// virtio-gpu (any resolution set here, needs the virtio-win display driver). The switch to
+/// virtio-gpu goes through `.preparingVirtio`.
+struct WindowsDisplaySection: View {
+    @Binding var display: QEMUDisplay?
+    @Binding var width: Int
+    @Binding var height: Int
+    @ObservedObject private var drivers = WindowsDrivers.shared
+
+    static let resolutions = [(1280, 800), (1440, 900), (1680, 1050), (1920, 1080), (1920, 1200),
+                              (2560, 1440), (2560, 1600), (3840, 2160)]
+
+    private var resolution: Binding<String> {
+        Binding(get: { "\(width)x\(height)" }, set: { value in
+            let parts = value.split(separator: "x").compactMap { Int($0) }
+            if parts.count == 2 { width = parts[0]; height = parts[1] }
+        })
+    }
+
+    var body: some View {
+        Section {
+            switch display ?? .basic {
+            case .basic:
+                LabeledContent("Screen", value: "Basic, 1024 × 768")
+                Button("Switch to Virtio GPU") { display = .preparingVirtio }
+                    .disabled(!drivers.isAvailable)
+            case .preparingVirtio:
+                LabeledContent("Screen", value: "Basic, switching to virtio GPU")
+                Text("Start Windows and install the drivers with the command above, if you haven't yet. "
+                     + "Once Windows has loaded the virtio display driver, the screen switches at the next start.")
+                    .font(.callout)
+                Button("Cancel Switch") { display = .basic }
+            case .virtio:
+                Picker("Resolution", selection: resolution) {
+                    if !Self.resolutions.contains(where: { $0 == (width, height) }) {
+                        Text("\(width) × \(height)").tag("\(width)x\(height)")
+                    }
+                    ForEach(Self.resolutions.indices, id: \.self) { index in
+                        let size = Self.resolutions[index]
+                        Text("\(size.0) × \(size.1)").tag("\(size.0)x\(size.1)")
+                    }
+                }
+                Button("Switch Back to Basic") { display = .basic }
+            }
+        } header: {
+            Text("Screen")
+        } footer: {
+            Text(display == .virtio
+                 ? "Resolution changes apply at the next start; Windows' own resolution menu isn't available "
+                   + "with this driver. There's no 3D acceleration. If the screen stays black, switch back to Basic."
+                 : "The virtio GPU allows higher resolutions than the basic screen's 1024 × 768. It needs the display "
+                   + "driver from the Windows drivers download. There's no 3D acceleration.")
                 .foregroundStyle(.secondary)
         }
     }

@@ -40,6 +40,19 @@ enum QEMUDiskBus: String, Codable {
     case virtio
 }
 
+/// How a QEMU (Windows) guest shows its screen.
+enum QEMUDisplay: String, Codable {
+    /// ramfb, a plain framebuffer Windows drives with its Basic Display driver: 1024 × 768 at most.
+    case basic
+    /// ramfb plus virtio-gpu, so Windows binds the virtio-win display driver while the screen
+    /// it already uses keeps working. QEMUMachine watches for the driver to load.
+    case preparingVirtio
+    /// virtio-gpu at `displayWidth` × `displayHeight`; needs the virtio-win display driver.
+    /// ramfb stays attached while an ISO is: Windows' "Press any key" boot prompt and Setup
+    /// can only draw on a plain framebuffer.
+    case virtio
+}
+
 enum NetworkMode: String, Codable, CaseIterable, Identifiable {
     case nat
     case bridged
@@ -84,6 +97,8 @@ struct VMRecord: Codable, Identifiable, Hashable {
     var displayHeight: Int
     /// QEMU engine only; nil means NVMe.
     var diskBus: QEMUDiskBus?
+    /// QEMU engine only; nil means basic.
+    var display: QEMUDisplay?
     var sourcePVMPath: String
     var importedAt: Date
 
@@ -98,7 +113,7 @@ struct VMRecord: Codable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, name, guestOS, guestOSDescription, cpuCount, memoryMB, diskFileNames
         case networkMode, bridgedInterfaceID, socketVmnetPath, macAddress, isoPath
-        case displayWidth, displayHeight, diskBus, sourcePVMPath, importedAt
+        case displayWidth, displayHeight, diskBus, display, sourcePVMPath, importedAt
     }
 }
 

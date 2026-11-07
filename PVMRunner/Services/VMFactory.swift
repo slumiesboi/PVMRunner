@@ -16,8 +16,8 @@ struct NewVMSettings {
 /// Creates new, empty Linux or Windows VMs in the library.
 struct VMFactory {
     var store = VMLibraryStore()
-    /// The virtio-win ISO. When present, Windows Setup installs the virtio storage driver, so a
-    /// new Windows VM uses the faster virtio disk from the start.
+    /// The virtio-win ISO. When present, Windows Setup installs the virtio storage and display
+    /// drivers, so a new Windows VM uses the faster virtio disk and virtio-gpu from the start.
     var windowsDriversISO = WindowsDrivers.installedISO
 
     /// Creates the VM folder with a sparse blank disk and the ISO attached. With an empty
@@ -52,6 +52,7 @@ struct VMFactory {
             record.directoryName = folder
             if settings.guestOS == .windows && windowsDriversISO != nil {
                 record.diskBus = .virtio
+                record.display = .virtio
             }
             try store.save(record)
             return record

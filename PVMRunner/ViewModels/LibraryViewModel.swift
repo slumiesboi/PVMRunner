@@ -39,6 +39,11 @@ final class LibraryViewModel: ObservableObject {
             record.diskBus = .virtio
             self.update(record)
         }
+        controller.onVirtioDisplayLoaded = { [weak self] in
+            guard let self, var record = self.record(id: id), record.display == .preparingVirtio else { return }
+            record.display = .virtio
+            self.update(record)
+        }
         controllers[id] = controller
         return controller
     }

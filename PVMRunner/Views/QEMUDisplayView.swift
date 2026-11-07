@@ -5,9 +5,11 @@ import SwiftUI
 /// mouse input. The guest draws its own pointer, so the Mac pointer is hidden over the screen.
 struct QEMUDisplayView: NSViewRepresentable {
     let socketPath: String
+    /// virtio-gpu's screen when the guest has ramfb too (see `QEMUDisplay`).
+    var gpuSocketPath: String?
 
     func makeNSView(context: Context) -> QEMUScreenView {
-        let view = QEMUScreenView(socketPath: socketPath)
+        let view = QEMUScreenView(socketPath: socketPath, gpuSocketPath: gpuSocketPath)
         DispatchQueue.main.async { view.window?.makeFirstResponder(view) }
         return view
     }
@@ -19,29 +21,74 @@ struct QEMUDisplayView: NSViewRepresentable {
     }
 }
 
+/// With two screens (ramfb and virtio-gpu) it shows virtio-gpu whenever Windows draws on it,
+/// and ramfb otherwise: during Setup, and while Windows starts before its display driver loads.
 final class QEMUScreenView: NSView {
-    private let client: RFBClient
-    private var image: CGImage?
+    private let primary: RFBClient
+    private let gpu: RFBClient?
+    private var primaryImage: CGImage?
+    private var gpuImage: CGImage?
+    private(set) var showsGPU = false
+    private var client: RFBClient { showsGPU ? gpu ?? primary : primary }
+    private var image: CGImage? { showsGPU ? gpuImage : primaryImage }
     private var buttons: UInt8 = 0
     private var pressedScancodes = Set<UInt32>()
     private var scrollRemainder = CGSize.zero
     private static let hiddenCursor = NSCursor(image: NSImage(size: NSSize(width: 1, height: 1)), hotSpot: .zero)
 
-    init(socketPath: String) {
-        client = RFBClient(socketPath: socketPath)
+    init(socketPath: String, gpuSocketPath: String? = nil) {
+        primary = RFBClient(socketPath: socketPath)
+        gpu = gpuSocketPath.map(RFBClient.init(socketPath:))
         super.init(frame: .zero)
         wantsLayer = true
         layer?.backgroundColor = NSColor.black.cgColor
-        client.onFrame = { [weak self] image in
-            self?.image = image
-            self?.needsDisplay = true
+        primary.onFrame = { [weak self] image in
+            guard let self else { return }
+            primaryImage = image
+            if !showsGPU { needsDisplay = true }
         }
-        client.start()
+        gpu?.onFrame = { [weak self] image in
+            guard let self else { return }
+            gpuImage = image
+            show(gpu: !Self.isBlank(image))
+            if showsGPU { needsDisplay = true }
+        }
+        primary.start()
+        gpu?.start()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
-    func disconnect() { client.stop() }
+    func disconnect() {
+        primary.stop()
+        gpu?.stop()
+    }
+
+    private func show(gpu: Bool) {
+        guard gpu != showsGPU else { return }
+        releaseInput()
+        showsGPU = gpu
+        needsDisplay = true
+        window?.invalidateCursorRects(for: self)
+    }
+
+    /// True for an all-black screen, such as QEMU's "Display output is not active" placeholder
+    /// on a virtio-gpu the guest isn't using. Samples a 64 × 36 grid.
+    static func isBlank(_ image: CGImage) -> Bool {
+        let width = 64, height = 36
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        guard let context = CGContext(data: &pixels, width: width, height: height, bitsPerComponent: 8,
+                                      bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return false }
+        context.interpolationQuality = .none
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        var dark = 0
+        for offset in stride(from: 0, to: pixels.count, by: 4)
+        where pixels[offset] < 16 && pixels[offset + 1] < 16 && pixels[offset + 2] < 16 {
+            dark += 1
+        }
+        return dark * 100 >= width * height * 97
+    }
 
     override var acceptsFirstResponder: Bool { true }
     override var isFlipped: Bool { true }
@@ -170,10 +217,18 @@ final class QEMUScreenView: NSView {
     }
 
     override func resignFirstResponder() -> Bool {
-        // Release anything still held so the guest doesn't see a stuck key.
+        releaseInput()
+        return super.resignFirstResponder()
+    }
+
+    /// Releases anything still held so the guest doesn't see a stuck key or button.
+    private func releaseInput() {
         for code in pressedScancodes { client.sendKey(scancode: code, down: false) }
         pressedScancodes.removeAll()
-        return super.resignFirstResponder()
+        if buttons != 0 {
+            buttons = 0
+            client.sendPointer(x: 0, y: 0, buttons: 0)
+        }
     }
 }
 
